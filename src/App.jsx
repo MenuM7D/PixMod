@@ -95,7 +95,7 @@ const App = () => {
         }
         setResizedImage(resizedDataURL);
         setLoading(false);
-      }, 600); // Simulate processing time
+      }, 600);
     };
   };
 
@@ -153,9 +153,6 @@ const App = () => {
       originalSize: 'Original Size',
       fileName: 'File Name:',
       fileSize: 'File Size:',
-      optimize: 'Optimize for Web',
-      autoSize: 'Auto Size',
-      preview: 'Live Preview',
       zoomIn: 'Zoom In',
       zoomOut: 'Zoom Out',
     },
@@ -177,9 +174,6 @@ const App = () => {
       originalSize: 'الحجم الأصلي',
       fileName: 'اسم الملف:',
       fileSize: 'حجم الملف:',
-      optimize: 'تحسين للويب',
-      autoSize: 'حجم تلقائي',
-      preview: 'معاينة مباشرة',
       zoomIn: 'تكبير',
       zoomOut: 'تصغير',
     },
@@ -198,7 +192,6 @@ const App = () => {
   // Reset settings
   const resetSettings = () => {
     if (!image) return;
-
     const img = new Image();
     img.src = image;
     img.onload = () => {
@@ -214,7 +207,6 @@ const App = () => {
   // Auto-size handler
   const setToOriginalSize = () => {
     if (!image) return;
-
     const img = new Image();
     img.src = image;
     img.onload = () => {
@@ -251,16 +243,17 @@ const App = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
-      <header className="p-4 md:p-6 flex justify-between items-center shadow-md bg-opacity-80 backdrop-blur-md backdrop-saturate-150 border-b dark:border-gray-700">
+    <div className={`min-h-screen transition-colors duration-500 font-sans ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-[#f5f0ec] text-gray-800'}`}>
+      {/* Google Font */}
+      <link href="https://fonts.googleapis.com/css2?family=Inter :wght@400;500;600&display=swap" rel="stylesheet" />
+
+      <header className={`p-4 md:p-6 flex justify-between items-center shadow-md backdrop-blur-lg border-b ${darkMode ? 'bg-black/70 border-gray-700' : 'bg-white/70 border-gray-200'}`}>
         <h1 className="text-xl md:text-3xl font-bold">{t.title}</h1>
         <div className="flex gap-3 md:gap-4">
           {/* Language Switcher */}
           <button
             onClick={toggleLanguage}
-            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
-              darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-            }`}
+            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
             aria-label="Toggle language"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -273,9 +266,7 @@ const App = () => {
           {/* Dark Mode Toggle */}
           <button
             onClick={toggleDarkMode}
-            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
-              darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-            }`}
+            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
             aria-label="Toggle dark mode"
           >
             {darkMode ? (
@@ -295,10 +286,8 @@ const App = () => {
       <main className="container mx-auto p-4 md:p-6">
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {/* Upload Section */}
-          <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-blue-500/20' : 'bg-white hover:shadow-blue-300/20'}`}>
+          <div className={`p-6 rounded-lg shadow-md transition-all duration-300 transform hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <h2 className="text-xl font-semibold mb-4">{t.upload}</h2>
-
-            {/* Custom File Upload Button with Drag and Drop */}
             <label
               htmlFor="image-upload"
               onDragOver={handleDragOver}
@@ -320,17 +309,11 @@ const App = () => {
                 </svg>
               </div>
               <span className="block text-sm md:text-base">{t.dragDrop}</span>
-              <input
-                id="image-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-              />
+              <input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
             </label>
 
             {image && (
-              <div className="mt-4 space-y-2">
+              <div className="mt-4 space-y-2 animate-fade-in">
                 <p><strong>{t.fileName}</strong> {fileName}</p>
                 <p><strong>{t.fileSize}</strong> {Math.round(fileSize)} KB</p>
               </div>
@@ -339,14 +322,12 @@ const App = () => {
             {!image && <p className="mt-4 text-center">{t.noImage}</p>}
 
             {image && (
-              <div className="mt-6 space-y-4">
+              <div className="mt-6 space-y-4 animate-fade-in">
                 <div className="flex items-center justify-between">
                   <label>{t.lockRatio}</label>
                   <button
                     onClick={() => setAspectRatio(!aspectRatio)}
-                    className={`p-1 rounded focus:outline-none ${
-                      darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-                    }`}
+                    className={`p-1 rounded focus:outline-none ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`}
                     aria-label="Toggle aspect ratio"
                   >
                     {aspectRatio ? (
@@ -484,9 +465,8 @@ const App = () => {
           </div>
 
           {/* Preview & Download Section */}
-          <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-green-500/20' : 'bg-white hover:shadow-green-300/20'}`}>
+          <div className={`p-6 rounded-lg shadow-md transition-all duration-300 transform hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <h2 className="text-xl font-semibold mb-4">{t.download}</h2>
-
             {resizedImage ? (
               <>
                 <img src={resizedImage} alt="Resized" className="w-full max-h-60 object-contain rounded-md border dark:border-gray-600" />
@@ -508,8 +488,9 @@ const App = () => {
         </section>
       </main>
 
-      <footer className={`p-4 text-center mt-10 ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
-        <p>© 2025 M7D | {t.title} | Designed with ❤️ by M7D</p>
+      {/* Updated Footer */}
+      <footer className={`p-4 text-center mt-10 ${darkMode ? 'bg-black text-gray-500' : 'bg-white text-gray-500'} border-t ${darkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+        <p>© 2025 M7D | Professional Image Resizer</p>
       </footer>
     </div>
   );
