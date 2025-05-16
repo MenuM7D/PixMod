@@ -1,0 +1,397 @@
+import React, { useState, useEffect } from 'react';
+
+const App = () => {
+  const [darkMode, setDarkMode] = useState(false);
+  const [language, setLanguage] = useState('en');
+  const [image, setImage] = useState(null);
+  const [resizedImage, setResizedImage] = useState(null);
+  const [width, setWidth] = useState(300);
+  const [height, setHeight] = useState(200);
+  const [aspectRatio, setAspectRatio] = useState(true);
+  const [format, setFormat] = useState('png');
+  const [quality, setQuality] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
+  // Toggle language
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'ar' : 'en');
+  };
+
+  // Handle image upload
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = () => {
+          setImage(img.src);
+          setWidth(img.width);
+          setHeight(img.height);
+          setResizedImage(null);
+        };
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Resize image
+  const resizeImage = () => {
+    if (!image || width <= 0 || height <= 0) return;
+
+    const img = new Image();
+    img.src = image;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = width;
+      canvas.height = height;
+
+      setLoading(true);
+
+      setTimeout(() => {
+        ctx.drawImage(img, 0, 0, width, height);
+        let resizedDataURL;
+        if (format === 'jpg') {
+          resizedDataURL = canvas.toDataURL('image/jpeg', quality);
+        } else {
+          resizedDataURL = canvas.toDataURL('image/png');
+        }
+        setResizedImage(resizedDataURL);
+        setLoading(false);
+      }, 600); // Simulate processing time
+    };
+  };
+
+  // Download image
+  const downloadImage = () => {
+    if (!resizedImage) return;
+
+    const link = document.createElement('a');
+    link.href = resizedImage;
+    link.download = `resized-image.${format}`;
+    link.click();
+  };
+
+  // Update height based on aspect ratio
+  useEffect(() => {
+    if (aspectRatio && image) {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => {
+        const ratio = img.height / img.width;
+        setHeight(Math.round(width * ratio));
+      };
+    }
+  }, [width, aspectRatio, image]);
+
+  // Update width based on aspect ratio
+  useEffect(() => {
+    if (aspectRatio && image) {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => {
+        const ratio = img.width / img.height;
+        setWidth(Math.round(height * ratio));
+      };
+    }
+  }, [height, aspectRatio, image]);
+
+  // Translations
+  const translations = {
+    en: {
+      title: 'Professional Image Resizer',
+      upload: 'Upload Image',
+      width: 'Width',
+      height: 'Height',
+      resize: 'Resize Image',
+      download: 'Download Resized Image',
+      noImage: 'No image uploaded yet.',
+      resizing: 'Resizing...',
+      dragDrop: 'Drag & Drop or Click to Upload',
+      lockRatio: 'Lock Aspect Ratio',
+      unlockRatio: 'Unlock Aspect Ratio',
+      format: 'Format',
+      quality: 'Quality',
+      reset: 'Reset',
+      originalSize: 'Original Size',
+    },
+    ar: {
+      title: 'مُصغّر الصور الاحترافي',
+      upload: 'تحميل صورة',
+      width: 'العرض',
+      height: 'الارتفاع',
+      resize: 'تغيير الحجم',
+      download: 'تنزيل الصورة المصغرة',
+      noImage: 'لم يتم تحميل أي صورة بعد.',
+      resizing: 'جاري التغيير...',
+      dragDrop: 'اسحب وأفلت أو اضغط لتحميل صورة',
+      lockRatio: 'قفل نسبة الأبعاد',
+      unlockRatio: 'إلغاء قفل النسبة',
+      format: 'التنسيق',
+      quality: 'الجودة',
+      reset: 'إعادة ضبط',
+      originalSize: 'الحجم الأصلي',
+    },
+  };
+
+  const t = translations[language];
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  // Reset settings
+  const resetSettings = () => {
+    if (!image) return;
+
+    const img = new Image();
+    img.src = image;
+    img.onload = () => {
+      setWidth(img.width);
+      setHeight(img.height);
+      setAspectRatio(true);
+      setFormat('png');
+      setQuality(1);
+      setResizedImage(null);
+    };
+  };
+
+  return (
+    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
+      <header className="p-4 md:p-6 flex justify-between items-center shadow-md bg-opacity-80 backdrop-blur-md backdrop-saturate-150 border-b dark:border-gray-700">
+        <h1 className="text-xl md:text-3xl font-bold">{t.title}</h1>
+        <div className="flex gap-3 md:gap-4">
+          {/* Language Switcher */}
+          <button
+            onClick={toggleLanguage}
+            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
+              darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+            }`}
+            aria-label="Toggle language"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+          </button>
+
+          {/* Dark Mode Toggle */}
+          <button
+            onClick={toggleDarkMode}
+            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
+              darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+            }`}
+            aria-label="Toggle dark mode"
+          >
+            {darkMode ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5" />
+                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            )}
+          </button>
+        </div>
+      </header>
+
+      <main className="container mx-auto p-4 md:p-6">
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+          {/* Upload Section */}
+          <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-blue-500/20' : 'bg-white hover:shadow-blue-300/20'}`}>
+            <h2 className="text-xl font-semibold mb-4">{t.upload}</h2>
+
+            {/* Custom File Upload Button */}
+            <label
+              htmlFor="image-upload"
+              className={`relative block w-full p-6 border-2 border-dashed rounded-lg text-center cursor-pointer transition-all ${
+                darkMode 
+                  ? 'border-gray-600 hover:border-blue-400 bg-gray-700/50 hover:bg-gray-700' 
+                  : 'border-gray-300 hover:border-blue-400 bg-gray-50 hover:bg-gray-100'
+              }`}
+            >
+              <div className="mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <span className="block text-sm md:text-base">{t.dragDrop}</span>
+              <input
+                id="image-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+            </label>
+
+            {image && (
+              <div className="mt-4">
+                <img src={image} alt="Uploaded" className="max-h-48 sm:max-h-60 w-auto mx-auto rounded-md border dark:border-gray-600" />
+              </div>
+            )}
+
+            {!image && <p className="mt-4 text-center">{t.noImage}</p>}
+
+            {image && (
+              <div className="mt-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <label>{t.lockRatio}</label>
+                  <button
+                    onClick={() => setAspectRatio(!aspectRatio)}
+                    className={`p-1 rounded focus:outline-none ${
+                      darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                    }`}
+                    aria-label="Toggle aspect ratio"
+                  >
+                    {aspectRatio ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 9.9-2"></path>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block mb-2">{t.width}</label>
+                    <input
+                      type="number"
+                      value={width}
+                      onChange={(e) => setWidth(parseInt(e.target.value))}
+                      min="1"
+                      className={`w-full px-3 py-2 border rounded-md focus:ring focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                        darkMode ? 'focus:ring-blue-400' : 'focus:ring-blue-200'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-2">{t.height}</label>
+                    <input
+                      type="number"
+                      value={height}
+                      onChange={(e) => setHeight(parseInt(e.target.value))}
+                      min="1"
+                      className={`w-full px-3 py-2 border rounded-md focus:ring focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                        darkMode ? 'focus:ring-blue-400' : 'focus:ring-blue-200'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block mb-2">{t.format}</label>
+                  <select
+                    value={format}
+                    onChange={(e) => setFormat(e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-md focus:ring focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                      darkMode ? 'focus:ring-blue-400' : 'focus:ring-blue-200'
+                    }`}
+                  >
+                    <option value="png">PNG</option>
+                    <option value="jpg">JPG</option>
+                  </select>
+                </div>
+
+                {format === 'jpg' && (
+                  <div>
+                    <label className="block mb-2">{t.quality}</label>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="1"
+                      step="0.1"
+                      value={quality}
+                      onChange={(e) => setQuality(parseFloat(e.target.value))}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between mt-1 text-xs">
+                      <span>Low</span>
+                      <span>High</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3 mt-4">
+                  <button
+                    onClick={resetSettings}
+                    className={`py-2 px-4 rounded-md font-medium transition-all hover:opacity-90 ${
+                      darkMode
+                        ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                    }`}
+                  >
+                    {t.reset}
+                  </button>
+                  <button
+                    onClick={resizeImage}
+                    disabled={loading}
+                    className={`flex-1 py-2 px-4 rounded-md font-medium transition-all hover:opacity-90 ${
+                      darkMode
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                        : 'bg-blue-500 hover:bg-blue-600 text-white'
+                    }`}
+                  >
+                    {loading ? t.resizing : t.resize}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Preview & Download Section */}
+          <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-green-500/20' : 'bg-white hover:shadow-green-300/20'}`}>
+            <h2 className="text-xl font-semibold mb-4">{t.download}</h2>
+
+            {resizedImage ? (
+              <>
+                <img src={resizedImage} alt="Resized" className="w-full max-h-60 object-contain rounded-md border dark:border-gray-600" />
+                <button
+                  onClick={downloadImage}
+                  className={`mt-6 w-full py-2 px-4 rounded-md font-medium transition-all hover:opacity-90 ${
+                    darkMode
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'bg-green-500 hover:bg-green-600 text-white'
+                  }`}
+                >
+                  {t.download}
+                </button>
+              </>
+            ) : (
+              <p className="text-center mt-10">{!image ? t.noImage : loading ? t.resizing : "Select size and click resize."}</p>
+            )}
+          </div>
+        </section>
+      </main>
+
+      <footer className={`p-4 text-center mt-10 ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
+        <p>© 2025 M7D | {t.title} | Designed with ❤️ by M7D</p>
+      </footer>
+    </div>
+  );
+};
+
+export default App;
