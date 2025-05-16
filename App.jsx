@@ -11,6 +11,9 @@ const App = () => {
   const [format, setFormat] = useState('png');
   const [quality, setQuality] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [fileName, setFileName] = useState('');
+  const [fileSize, setFileSize] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Toggle dark mode
   const toggleDarkMode = () => {
@@ -26,6 +29,9 @@ const App = () => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setFileName(file.name);
+      setFileSize(file.size / 1024); // in KB
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new Image();
@@ -38,6 +44,29 @@ const App = () => {
         };
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Drag & Drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const input = document.getElementById('image-upload');
+      input.files = e.dataTransfer.files;
+      const event = new Event('change', { bubbles: true });
+      input.dispatchEvent(event);
     }
   };
 
@@ -76,7 +105,7 @@ const App = () => {
 
     const link = document.createElement('a');
     link.href = resizedImage;
-    link.download = `resized-image.${format}`;
+    link.download = `resized-${Date.now()}.${format}`;
     link.click();
   };
 
@@ -122,6 +151,13 @@ const App = () => {
       quality: 'Quality',
       reset: 'Reset',
       originalSize: 'Original Size',
+      fileName: 'File Name:',
+      fileSize: 'File Size:',
+      optimize: 'Optimize for Web',
+      autoSize: 'Auto Size',
+      preview: 'Live Preview',
+      zoomIn: 'Zoom In',
+      zoomOut: 'Zoom Out',
     },
     ar: {
       title: 'مُصغّر الصور الاحترافي',
@@ -139,6 +175,13 @@ const App = () => {
       quality: 'الجودة',
       reset: 'إعادة ضبط',
       originalSize: 'الحجم الأصلي',
+      fileName: 'اسم الملف:',
+      fileSize: 'حجم الملف:',
+      optimize: 'تحسين للويب',
+      autoSize: 'حجم تلقائي',
+      preview: 'معاينة مباشرة',
+      zoomIn: 'تكبير',
+      zoomOut: 'تصغير',
     },
   };
 
@@ -166,6 +209,45 @@ const App = () => {
       setQuality(1);
       setResizedImage(null);
     };
+  };
+
+  // Auto-size handler
+  const setToOriginalSize = () => {
+    if (!image) return;
+
+    const img = new Image();
+    img.src = image;
+    img.onload = () => {
+      setWidth(img.width);
+      setHeight(img.height);
+    };
+  };
+
+  // Zoom handlers
+  const zoomIn = () => {
+    if (!image) return;
+    setWidth(prev => Math.min(prev + 50, 5000));
+    if (aspectRatio) {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => {
+        const ratio = img.height / img.width;
+        setHeight(Math.round(width * ratio));
+      };
+    }
+  };
+
+  const zoomOut = () => {
+    if (!image) return;
+    setWidth(prev => Math.max(prev - 50, 50));
+    if (aspectRatio) {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => {
+        const ratio = img.height / img.width;
+        setHeight(Math.round(width * ratio));
+      };
+    }
   };
 
   return (
@@ -216,13 +298,18 @@ const App = () => {
           <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-blue-500/20' : 'bg-white hover:shadow-blue-300/20'}`}>
             <h2 className="text-xl font-semibold mb-4">{t.upload}</h2>
 
-            {/* Custom File Upload Button */}
+            {/* Custom File Upload Button with Drag and Drop */}
             <label
               htmlFor="image-upload"
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
               className={`relative block w-full p-6 border-2 border-dashed rounded-lg text-center cursor-pointer transition-all ${
-                darkMode 
-                  ? 'border-gray-600 hover:border-blue-400 bg-gray-700/50 hover:bg-gray-700' 
-                  : 'border-gray-300 hover:border-blue-400 bg-gray-50 hover:bg-gray-100'
+                isDragging
+                  ? 'border-blue-500 bg-blue-500/10'
+                  : darkMode 
+                    ? 'border-gray-600 hover:border-blue-400 bg-gray-700/50 hover:bg-gray-700' 
+                    : 'border-gray-300 hover:border-blue-400 bg-gray-50 hover:bg-gray-100'
               }`}
             >
               <div className="mb-3">
@@ -243,8 +330,9 @@ const App = () => {
             </label>
 
             {image && (
-              <div className="mt-4">
-                <img src={image} alt="Uploaded" className="max-h-48 sm:max-h-60 w-auto mx-auto rounded-md border dark:border-gray-600" />
+              <div className="mt-4 space-y-2">
+                <p><strong>{t.fileName}</strong> {fileName}</p>
+                <p><strong>{t.fileSize}</strong> {Math.round(fileSize)} KB</p>
               </div>
             )}
 
@@ -300,6 +388,39 @@ const App = () => {
                       }`}
                     />
                   </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={setToOriginalSize}
+                    className={`py-1 px-2 rounded-md text-xs transition-all hover:opacity-90 ${
+                      darkMode
+                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                        : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                    }`}
+                  >
+                    {t.originalSize}
+                  </button>
+                  <button
+                    onClick={zoomIn}
+                    className={`py-1 px-2 rounded-md text-xs transition-all hover:opacity-90 ${
+                      darkMode
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                        : 'bg-blue-500 hover:bg-blue-600 text-white'
+                    }`}
+                  >
+                    {t.zoomIn}
+                  </button>
+                  <button
+                    onClick={zoomOut}
+                    className={`py-1 px-2 rounded-md text-xs transition-all hover:opacity-90 ${
+                      darkMode
+                        ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                        : 'bg-purple-500 hover:bg-purple-600 text-white'
+                    }`}
+                  >
+                    {t.zoomOut}
+                  </button>
                 </div>
 
                 <div>
