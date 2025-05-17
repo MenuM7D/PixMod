@@ -1,26 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {
-  auth,
-  registerUser,
-  loginUser,
-  logoutUser,
-  onAuthStateChanged,
-} from './firebase';
 
 const App = () => {
-  // Auth states
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // login or signup
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [currentUser, setCurrentUser] = useState(null);
-
-  // Profile info
-  const [userName, setUserName] = useState(null);
-
-  // Image Resizer State
   const [darkMode, setDarkMode] = useState(false);
   const [language, setLanguage] = useState('en');
   const [image, setImage] = useState(null);
@@ -55,12 +35,14 @@ const App = () => {
       originalSize: 'Original Size',
       fileName: 'File Name:',
       fileSize: 'File Size:',
-      profile: 'Profile',
-      editProfile: 'Edit Profile',
-      loginToEdit: 'You need to log in to edit your profile',
-      requiredFields: 'All fields are required',
-      passNotMatch: 'Passwords do not match',
-      invalidPass: 'Password must be at least 6 characters'
+      preview: 'Live Preview',
+      zoomIn: 'Zoom In',
+      zoomOut: 'Zoom Out',
+      login: 'Login',
+      signup: 'Sign Up',
+      logout: 'Logout',
+      optimize: 'Optimize for Web',
+      autoSize: 'Auto Size'
     },
     ar: {
       title: 'مُصغّر الصور الاحترافي',
@@ -80,31 +62,18 @@ const App = () => {
       originalSize: 'الحجم الأصلي',
       fileName: 'اسم الملف:',
       fileSize: 'حجم الملف:',
-      profile: 'الملف الشخصي',
-      editProfile: 'تعديل الملف الشخصي',
-      loginToEdit: 'يجب تسجيل الدخول لتتمكن من تعديل الملف الشخصي',
-      requiredFields: 'جميع الحقول مطلوبة',
-      passNotMatch: 'كلمتا المرور غير متطابقتين',
-      invalidPass: 'يجب أن تكون كلمة المرور 6 خانات على الأقل'
+      preview: 'معاينة مباشرة',
+      zoomIn: 'تكبير',
+      zoomOut: 'تصغير',
+      login: 'تسجيل الدخول',
+      signup: 'إنشاء حساب',
+      logout: 'تسجيل الخروج',
+      optimize: 'تحسين للويب',
+      autoSize: 'حجم تلقائي'
     }
   };
 
   const t = translations[language];
-
-  // Check if user is logged in
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setIsLoggedIn(true);
-        setUserName(user.email.split('@')[0]);
-        setCurrentUser(user);
-      } else {
-        setIsLoggedIn(false);
-        setUserName(null);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
 
   // Toggle dark mode
   const toggleDarkMode = () => {
@@ -114,73 +83,6 @@ const App = () => {
   // Toggle language
   const toggleLanguage = () => {
     setLanguage(language === 'en' ? 'ar' : 'en');
-  };
-
-  // Handle Login
-  const handleLogin = async () => {
-    if (!email || !password) {
-      alert(t.requiredFields);
-      return;
-    }
-
-    try {
-      await loginUser(email, password);
-      setShowLoginModal(false);
-    } catch (error) {
-      alert(error.message);
-    }
-  };
-
-  // Handle Sign Up
-  const handleSignUp = async () => {
-    if (!email || !password || !confirmPassword) {
-      alert(t.requiredFields);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      alert(t.passNotMatch);
-      return;
-    }
-
-    if (password.length < 6) {
-      alert(t.invalidPass);
-      return;
-    }
-
-    try {
-      await registerUser(email, password);
-      setUserName(email.split('@')[0]);
-      setShowLoginModal(false);
-    } catch (error) {
-      alert(error.message);
-    }
-  };
-
-  // Handle Logout
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
-      setUserName(null);
-      setCurrentUser(null);
-    } catch (error) {
-      alert(error.message);
-    }
-  };
-
-  // Handle Edit Profile Attempt
-  const handleEditProfile = () => {
-    if (!isLoggedIn) {
-      alert(t.loginToEdit);
-      setShowLoginModal(true);
-      return;
-    }
-    // هنا يمكنك فتح نافذة تعديل بيانات المستخدم
-    const newName = prompt('Enter new username:', userName);
-    if (newName && newName.trim()) {
-      setUserName(newName);
-      alert('تم تحديث الاسم بنجاح!');
-    }
   };
 
   // Handle image upload
@@ -347,53 +249,20 @@ const App = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
+    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
       {/* Header */}
-      <header className="p-4 md:p-6 flex justify-between items-center shadow-md bg-opacity-80 backdrop-blur-md backdrop-saturate-150 border-b dark:border-gray-700">
-        <h1 className="text-xl md:text-3xl font-bold">{t.title}</h1>
-
+      <header className="px-4 py-3 md:py-4 flex justify-between items-center shadow-md bg-opacity-80 backdrop-blur-md backdrop-saturate-150 border-b dark:border-gray-700">
+        <h1 className="text-lg md:text-2xl font-bold">{t.title}</h1>
         <div className="flex gap-2 md:gap-4 items-center">
-          {/* Mobile: Vertical Profile Button */}
-          <button
-            onClick={handleEditProfile}
-            className={`py-2 px-3 rounded-lg flex flex-col items-center justify-center ${
-              darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'
-            } sm:flex hidden`}
-            aria-label="Profile"
-          >
-            <span className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-              {userName ? userName.charAt(0).toUpperCase() : '?'}
-            </span>
-            <span className="text-xs mt-1 truncate max-w-[100px] text-center">
-              {userName || 'Guest'}
-            </span>
-          </button>
-
-          {/* Mobile: Horizontal Profile Button */}
-          <button
-            onClick={handleEditProfile}
-            className={`py-2 px-3 rounded-lg flex items-center gap-2 sm:hidden ${
-              darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'
-            }`}
-            aria-label="Profile"
-          >
-            <span className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-              {userName ? userName.charAt(0).toUpperCase() : '?'}
-            </span>
-            <span className="text-xs truncate max-w-[100px]">
-              {userName || 'Guest'}
-            </span>
-          </button>
-
           {/* Language Switcher */}
           <button
             onClick={toggleLanguage}
-            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
+            aria-label="Toggle language"
+            className={`p-2 rounded-full focus:outline-none hover:bg-opacity-80 ${
               darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
             }`}
-            aria-label="Toggle language"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
               <line x1="2" y1="12" x2="22" y2="12" />
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
@@ -403,48 +272,27 @@ const App = () => {
           {/* Dark Mode Toggle */}
           <button
             onClick={toggleDarkMode}
-            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
+            aria-label="Toggle dark mode"
+            className={`p-2 rounded-full focus:outline-none hover:bg-opacity-80 ${
               darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
             }`}
-            aria-label="Toggle dark mode"
           >
             {darkMode ? (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg xmlns="http://www.w3.svg">
                 <circle cx="12" cy="12" r="5" />
                 <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
               </svg>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 12.79A9 9 0 1 11.21 3 7 7 0 0 0 21 12.79z" />
               </svg>
             )}
           </button>
-
-          {/* Login/Logout Button */}
-          {!isLoggedIn ? (
-            <button
-              onClick={() => setShowLoginModal(true)}
-              className={`py-2 px-4 rounded-md font-medium ${
-                darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
-            >
-              {t.login}
-            </button>
-          ) : (
-            <button
-              onClick={handleLogout}
-              className={`py-2 px-4 rounded-md font-medium ${
-                darkMode ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-red-500 hover:bg-red-600 text-white'
-              }`}
-            >
-              {t.logout || 'Logout'}
-            </button>
-          )}
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto p-4 md:p-6">
+      <main className="container mx-auto p-4 md:p-6 flex-grow">
         <section className="grid grid-cols-1 gap-6">
           {/* Upload Section */}
           <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-blue-500/20' : 'bg-white hover:shadow-blue-300/20'}`}>
@@ -462,29 +310,26 @@ const App = () => {
                     : 'border-gray-300 hover:border-blue-400 bg-gray-50 hover:bg-gray-100'
               }`}
             >
-              <div className="mb-3 mx-auto">
+              <div className="mb-3">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
               </div>
               <span className="block text-sm md:text-base">{t.dragDrop}</span>
-              <input
-                id="image-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-              />
+              <input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
             </label>
+
             {image && (
               <div className="mt-4 space-y-2">
                 <p><strong>{t.fileName}</strong> {fileName}</p>
                 <p><strong>{t.fileSize}</strong> {Math.round(fileSize)} KB</p>
               </div>
             )}
+
             {!image && <p className="mt-4 text-center">{t.noImage}</p>}
+
             {image && (
               <div className="mt-6 space-y-4">
                 <div className="flex items-center justify-between">
@@ -497,18 +342,19 @@ const App = () => {
                     aria-label="Toggle aspect ratio"
                   >
                     {aspectRatio ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
                     ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 9.9-2"></path>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 9.9-2" />
                       </svg>
                     )}
                   </button>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block mb-2">{t.width}</label>
@@ -535,6 +381,7 @@ const App = () => {
                     />
                   </div>
                 </div>
+
                 <div className="flex gap-2">
                   <button
                     onClick={setToOriginalSize}
@@ -561,6 +408,7 @@ const App = () => {
                     {t.zoomOut}
                   </button>
                 </div>
+
                 <div>
                   <label className="block mb-2">{t.format}</label>
                   <select
@@ -568,12 +416,13 @@ const App = () => {
                     onChange={(e) => setFormat(e.target.value)}
                     className={`w-full px-3 py-2 border rounded-md focus:ring focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
                       darkMode ? 'focus:ring-blue-400' : 'focus:ring-blue-200'
-                      }`}
+                    }`}
                   >
                     <option value="png">PNG</option>
                     <option value="jpg">JPG</option>
                   </select>
                 </div>
+
                 {format === 'jpg' && (
                   <div>
                     <label className="block mb-2">{t.quality}</label>
@@ -592,6 +441,7 @@ const App = () => {
                     </div>
                   </div>
                 )}
+
                 <div className="flex gap-3 mt-4">
                   <button
                     onClick={resetSettings}
@@ -635,7 +485,9 @@ const App = () => {
                 </button>
               </>
             ) : (
-              <p className="text-center mt-10">{!image ? t.noImage : loading ? t.resizing : "Select size and click resize."}</p>
+              <p className="text-center mt-10">
+                {!image ? t.noImage : loading ? t.resizing : "Select size and click resize."}
+              </p>
             )}
           </div>
         </section>
