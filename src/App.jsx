@@ -4,18 +4,23 @@ import {
   registerUser,
   loginUser,
   logoutUser,
-  onAuthStateChanged
+  onAuthStateChanged,
+  sendEmailVerification,
+  sendPasswordResetEmail
 } from './firebase';
 
 const App = () => {
   // Auth states
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // login or signup
+  const [showAuthModal, setShowAuthModal] = useState(true);
+  const [authMode, setAuthMode] = useState('login'); // login or signup or reset-password
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
+
+  // Account verification state
+  const [isVerified, setIsVerified] = useState(false);
+  const [loadingAuth, setLoadingAuth] = useState(false);
 
   // Image Resizer State
   const [darkMode, setDarkMode] = useState(false);
@@ -31,6 +36,10 @@ const App = () => {
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Profile Picture
+  const [profilePic, setProfilePic] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   // Toggle dark mode
   const toggleDarkMode = () => {
@@ -62,6 +71,7 @@ const App = () => {
       originalSize: 'Original Size',
       fileName: 'File Name:',
       fileSize: 'File Size:',
+      preview: 'Live Preview',
       zoomIn: 'Zoom In',
       zoomOut: 'Zoom Out',
       login: 'Login',
@@ -78,7 +88,19 @@ const App = () => {
       requiredFields: 'All fields are required',
       passNotMatch: 'Passwords do not match',
       invalidPass: 'Password must be at least 6 characters',
-      verifyEmailSent: 'Verification email sent!',
+      verifyEmailSent: 'Verification email sent! Please check your inbox.',
+      emailNotVerified: 'Please verify your email before using the site.',
+      forgotPassword: 'Forgot Password?',
+      resetPassword: 'Send Reset Link',
+      backToLogin: 'Back to Login',
+      profile: 'Profile',
+      changePassword: 'Change Password',
+      updateProfile: 'Update Profile',
+      updateSuccess: 'Profile updated successfully!',
+      sending: 'Sending...',
+      resetPasswordDesc: 'Enter your email to receive a password reset link',
+      resetPasswordSuccess: 'Password reset email sent!',
+      resetPasswordError: 'Failed to send reset email'
     },
     ar: {
       title: 'مُصغّر الصور الاحترافي',
@@ -98,6 +120,7 @@ const App = () => {
       originalSize: 'الحجم الأصلي',
       fileName: 'اسم الملف:',
       fileSize: 'حجم الملف:',
+      preview: 'معاينة مباشرة',
       zoomIn: 'تكبير',
       zoomOut: 'تصغير',
       login: 'تسجيل الدخول',
@@ -114,8 +137,20 @@ const App = () => {
       requiredFields: 'جميع الحقول مطلوبة',
       passNotMatch: 'كلمتا المرور غير متطابقتين',
       invalidPass: 'يجب أن تكون كلمة المرور 6 خانات على الأقل',
-      verifyEmailSent: 'تم إرسال رسالة التفعيل إلى بريدك الإلكتروني',
-    },
+      verifyEmailSent: 'تم إرسال رسالة التفعيل! الرجاء فحص بريدك الإلكتروني.',
+      emailNotVerified: 'الرجاء تفعيل البريد الإلكتروني قبل استخدام الموقع.',
+      forgotPassword: 'هل نسيت كلمة المرور؟',
+      resetPassword: 'إرسال رابط إعادة التعيين',
+      backToLogin: 'العودة إلى تسجيل الدخول',
+      profile: 'الملف الشخصي',
+      changePassword: 'تغيير كلمة المرور',
+      updateProfile: 'تحديث الملف الشخصي',
+      updateSuccess: 'تم تحديث البيانات بنجاح!',
+      sending: 'جاري الإرسال...',
+      resetPasswordDesc: 'أدخل بريدك الإلكتروني لتلقي رابط تغيير كلمة المرور',
+      resetPasswordSuccess: 'تم إرسال رابط إعادة تعيين كلمة المرور',
+      resetPasswordError: 'فشل إرسال الرابط'
+    }
   };
 
   const t = translations[language];
@@ -125,10 +160,10 @@ const App = () => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setCurrentUser(user);
-        setIsLoggedIn(true);
+        setIsVerified(user.emailVerified);
       } else {
         setCurrentUser(null);
-        setIsLoggedIn(false);
+        setIsVerified(false);
       }
     });
     return () => unsubscribe();
@@ -154,10 +189,8 @@ const App = () => {
     try {
       await registerUser(email, password);
       alert(t.verifyEmailSent);
-      setShowAuthModal(false);
-      setEmail('');
-      setPassword('');
-      setConfirmPassword('');
+      setShowAuthModal(true);
+      setAuthMode('login');
     } catch (error) {
       alert(error.message);
     }
@@ -173,8 +206,6 @@ const App = () => {
     try {
       await loginUser(email, password);
       setShowAuthModal(false);
-      setEmail('');
-      setPassword('');
     } catch (error) {
       alert(error.message);
     }
@@ -184,13 +215,32 @@ const App = () => {
   const handleLogout = async () => {
     try {
       await logoutUser();
-      setIsLoggedIn(false);
+      setIsVerified(false);
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
     } catch (error) {
       alert(error.message);
     }
   };
 
-  // Image Upload Handlers
+  // Send password reset email
+  const handlePasswordReset = async () => {
+    if (!email) {
+      alert('الرجاء إدخال البريد الإلكتروني');
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      alert(t.resetPasswordSuccess);
+      setAuthMode('login');
+    } catch (error) {
+      alert(t.resetPasswordError + ': ' + error.message);
+    }
+  };
+
+  // Handle Image Upload
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -212,6 +262,7 @@ const App = () => {
     }
   };
 
+  // Drag & Drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -289,18 +340,6 @@ const App = () => {
     };
   };
 
-  // Auto-size handler
-  const setToOriginalSize = () => {
-    if (!image) return;
-
-    const img = new Image();
-    img.src = image;
-    img.onload = () => {
-      setWidth(img.width);
-      setHeight(img.height);
-    };
-  };
-
   // Zoom handlers
   const zoomIn = () => {
     if (!image) return;
@@ -328,127 +367,188 @@ const App = () => {
     }
   };
 
-  return (
-    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className={`w-full max-w-md p-6 rounded-lg shadow-xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-            <h2 className="text-2xl font-bold mb-4">{authMode === 'login' ? t.login : t.signup}</h2>
-            <input
-              type="email"
-              placeholder={t.email}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
-            />
-            <input
-              type="password"
-              placeholder={t.password}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
-            />
-            {authMode === 'signup' && (
-              <input
-                type="password"
-                placeholder={t.confirmPassword}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
-              />
-            )}
-            <button
-              onClick={authMode === 'login' ? handleLogin : handleSignUp}
-              className={`w-full py-2 rounded-md font-medium mt-2 ${
-                darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
-            >
-              {authMode === 'login' ? t.submitLogin : t.submitSignup}
-            </button>
+  // Update width based on aspect ratio
+  useEffect(() => {
+    if (aspectRatio && image) {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => {
+        const ratio = img.height / img.width;
+        setHeight(Math.round(width * ratio));
+      };
+    }
+  }, [width, aspectRatio, image]);
 
-            <p className="mt-4 text-center">
-              {authMode === 'login' ? t.needAccount : t.alreadyAccount}{' '}
-              <button
-                onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-                className="text-blue-500 hover:underline"
-              >
-                {authMode === 'login' ? t.signup : t.loginNow}
-              </button>
-            </p>
+  // Update width based on aspect ratio
+  useEffect(() => {
+    if (aspectRatio && image) {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => {
+        const ratio = img.width / img.height;
+        setWidth(Math.round(height * ratio));
+      };
+    }
+  }, [height, aspectRatio, image]);
+
+  return (
+    <>
+      {!currentUser ? (
+        <div className={`min-h-screen flex items-center justify-center p-4 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
+          <div className={`w-full max-w-md p-6 rounded-lg shadow-xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <h2 className="text-2xl font-bold mb-6 text-center">{authMode === 'login' ? t.login : authMode === 'signup' ? t.signup : t.forgotPassword}</h2>
+
+            {authMode === 'login' && (
+              <>
+                <input
+                  type="email"
+                  placeholder={t.email}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
+                />
+                <input
+                  type="password"
+                  placeholder={t.password}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
+                />
+                <button
+                  onClick={handleLogin}
+                  className={`w-full py-2 rounded-md font-medium mt-2 ${
+                    darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  {t.submitLogin}
+                </button>
+                <p className="mt-4 text-center">
+                  {t.needAccount}{' '}
+                  <button onClick={() => setAuthMode('signup')} className="text-blue-500 hover:underline">{t.signup}</button>
+                </p>
+                <p className="mt-2 text-center">
+                  <button onClick={() => setAuthMode('reset-password')} className="text-red-500 hover:underline">{t.forgotPassword}</button>
+                </p>
+              </>
+            )}
+
+            {authMode === 'signup' && (
+              <>
+                <input
+                  type="email"
+                  placeholder={t.email}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
+                />
+                <input
+                  type="password"
+                  placeholder={t.password}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
+                />
+                <input
+                  type="password"
+                  placeholder={t.confirmPassword}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
+                />
+                <button
+                  onClick={handleSignUp}
+                  className={`w-full py-2 rounded-md font-medium mt-2 ${
+                    darkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
+                  }`}
+                >
+                  {t.submitSignup}
+                </button>
+                <p className="mt-4 text-center">
+                  {t.alreadyAccount}{' '}
+                  <button onClick={() => setAuthMode('login')} className="text-blue-500 hover:underline">{t.loginNow}</button>
+                </p>
+              </>
+            )}
+
+            {authMode === 'reset-password' && (
+              <>
+                <p className="mb-4 text-sm">{t.resetPasswordDesc}</p>
+                <input
+                  type="email"
+                  placeholder={t.email}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
+                />
+                <button
+                  onClick={handlePasswordReset}
+                  className={`w-full py-2 rounded-md font-medium mt-2 ${
+                    darkMode ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                  }`}
+                >
+                  {loadingAuth ? t.sending : t.resetPassword}
+                </button>
+                <p className="mt-4 text-center">
+                  <button onClick={() => setAuthMode('login')} className="text-blue-500 hover:underline">{t.backToLogin}</button>
+                </p>
+              </>
+            )}
           </div>
         </div>
-      )}
-
-      <header className="p-4 md:p-6 flex justify-between items-center shadow-md bg-opacity-80 backdrop-blur-md backdrop-saturate-150 border-b dark:border-gray-700">
-        <h1 className="text-xl md:text-3xl font-bold">{t.title}</h1>
-        <div className="flex gap-3 md:gap-4">
-          {/* Language Switcher */}
-          <button
-            onClick={toggleLanguage}
-            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
-              darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-            }`}
-            aria-label="Toggle language"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="2" y1="12" x2="22" y2="12"></line>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-            </svg>
-          </button>
-
-          {/* Dark Mode Toggle */}
-          <button
-            onClick={toggleDarkMode}
-            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
-              darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-            }`}
-            aria-label="Toggle dark mode"
-          >
-            {darkMode ? (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="5" />
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-              </svg>
-            )}
-          </button>
+      ) : !isVerified ? (
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+          <div className="max-w-md w-full p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md text-center">
+            <h2 className="text-2xl font-semibold mb-4">Verify Your Email</h2>
+            <p className="mb-4">تم إرسال رسالة تفعيل إلى بريدك الإلكتروني.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">من فضلك تحقق من البريد وانقر على رابط التفعيل.</p>
+            <button
+              onClick={handleLogout}
+              className="py-2 px-4 rounded-md bg-red-500 hover:bg-red-600 text-white"
+            >
+              {t.logout}
+            </button>
+          </div>
         </div>
-      </header>
-
-      {!isLoggedIn ? (
-        <main className="container mx-auto p-4 md:p-6">
-          <section className="max-w-md mx-auto mt-10 p-6 rounded-lg shadow-lg text-center space-y-4">
-            <h2 className="text-2xl font-semibold">تسجيل الدخول</h2>
-            <p>للاستخدام الكامل للموقع، يرجى تسجيل الدخول أو إنشاء حساب جديد.</p>
-            <div className="flex gap-4">
+      ) : (
+        <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
+          {/* Main App UI */}
+          <header className="p-4 md:p-6 flex justify-between items-center shadow-md bg-opacity-80 backdrop-blur-md backdrop-saturate-150 border-b dark:border-gray-700">
+            <h1 className="text-xl md:text-3xl font-bold">Professional Image Resizer</h1>
+            <div className="flex gap-3 md:gap-4">
               <button
-                onClick={() => {
-                  setAuthMode('login');
-                  setShowAuthModal(true);
-                }}
-                className="flex-1 py-2 px-4 rounded-md bg-blue-500 hover:bg-blue-600 text-white"
+                onClick={toggleLanguage}
+                className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
+                  darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                }`}
+                aria-label="Toggle language"
               >
-                {t.login}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
               </button>
               <button
-                onClick={() => {
-                  setAuthMode('signup');
-                  setShowAuthModal(true);
-                }}
-                className="flex-1 py-2 px-4 rounded-md bg-green-500 hover:bg-green-600 text-white"
+                onClick={toggleDarkMode}
+                className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
+                  darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                }`}
+                aria-label="Toggle dark mode"
               >
-                {t.signup}
+                {darkMode ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="5" />
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                  </svg>
+                )}
               </button>
             </div>
-          </section>
-        </main>
-      ) : (
-        <>
+          </header>
+
           <main className="container mx-auto p-4 md:p-6">
             <div className="flex justify-end mb-4">
               <button
@@ -467,6 +567,7 @@ const App = () => {
               </div>
               <div>
                 <h2 className="text-xl font-semibold">{currentUser?.email}</h2>
+                <p className="text-xs text-green-500">✓ {t.emailNotVerified}</p>
               </div>
             </div>
 
@@ -489,7 +590,7 @@ const App = () => {
                 >
                   <div className="mb-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 0 01-2-2v-4" />
                       <polyline points="17 8 12 3 7 8" />
                       <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
@@ -519,12 +620,12 @@ const App = () => {
                         {aspectRatio ? (
                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            <path d="M7 11V7a5 5 0 0110 0v4" />
                           </svg>
                         ) : (
                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 9.9-2" />
+                            <path d="M7 11V7a5 5 0 019.9-2" />
                           </svg>
                         )}
                       </button>
@@ -538,7 +639,7 @@ const App = () => {
                           value={width}
                           onChange={(e) => setWidth(parseInt(e.target.value))}
                           min="1"
-                          className={`w-full px-3 py-2 border rounded-md focus:ring focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${darkMode ? 'focus:ring-blue-400' : 'focus:ring-blue-200'}`}
+                          className={`w-full px-3 py-2 border rounded-md focus:ring ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300 text-gray-800'}`}
                         />
                       </div>
                       <div>
@@ -548,7 +649,7 @@ const App = () => {
                           value={height}
                           onChange={(e) => setHeight(parseInt(e.target.value))}
                           min="1"
-                          className={`w-full px-3 py-2 border rounded-md focus:ring focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${darkMode ? 'focus:ring-blue-400' : 'focus:ring-blue-200'}`}
+                          className={`w-full px-3 py-2 border rounded-md focus:ring ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300 text-gray-800'}`}
                         />
                       </div>
                     </div>
@@ -579,7 +680,7 @@ const App = () => {
                       <select
                         value={format}
                         onChange={(e) => setFormat(e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-md focus:ring focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${darkMode ? 'focus:ring-blue-400' : 'focus:ring-blue-200'}`}
+                        className={`w-full px-3 py-2 border rounded-md focus:ring ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300 text-gray-800'}`}
                       >
                         <option value="png">PNG</option>
                         <option value="jpg">JPG</option>
@@ -638,20 +739,18 @@ const App = () => {
                     </button>
                   </>
                 ) : (
-                  <p className="text-center mt-10">
-                    {!image ? t.noImage : loading ? t.resizing : "Select size and click resize."}
-                  </p>
+                  <p className="text-center mt-10">{!image ? t.noImage : loading ? t.resizing : "Select size and click resize."}</p>
                 )}
               </div>
             </section>
           </main>
-        </>
-      )}
 
-      <footer className={`p-4 text-center mt-10 ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
-        <p>© 2025 M7D | {t.title} | Designed with ❤️ by M7D</p>
-      </footer>
-    </div>
+          <footer className={`p-4 text-center mt-10 ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
+            <p>© 2025 M7D | Professional Image Resizer | Designed with ❤️ by M7D</p>
+          </footer>
+        </div>
+      )}
+    </>
   );
 };
 
