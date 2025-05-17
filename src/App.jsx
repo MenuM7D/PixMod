@@ -5,25 +5,17 @@ import {
   loginUser,
   logoutUser,
   onAuthStateChanged,
-  sendEmailVerification,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
 } from './firebase';
 
 const App = () => {
   // Auth states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // login or signup or reset-password
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationCodeSent, setVerificationCodeSent] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [enteredCode, setEnteredCode] = useState(['', '', '', '', '', '']);
   const [currentUser, setCurrentUser] = useState(null);
-
-  // Account verification state
-  const [isVerified, setIsVerified] = useState(false);
-  const [verificationSent, setVerificationSent] = useState(false);
-  const [loadingVerification, setLoadingVerification] = useState(false);
-  const [resendingVerification, setResendingVerification] = useState(false);
 
   // Image Resizer State
   const [darkMode, setDarkMode] = useState(false);
@@ -39,6 +31,9 @@ const App = () => {
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Profile state
+  const [profileVerified, setProfileVerified] = useState(false); // متغير تحكم
 
   // Translations
   const translations = {
@@ -60,33 +55,17 @@ const App = () => {
       originalSize: 'Original Size',
       fileName: 'File Name:',
       fileSize: 'File Size:',
-      preview: 'Live Preview',
-      zoomIn: 'Zoom In',
-      zoomOut: 'Zoom Out',
+      verifyToEdit: 'Please verify your email to edit profile settings.',
+      enterCode: 'Enter Verification Code',
+      codeSent: 'A verification code has been sent to your email.',
+      codeLabel: 'Enter the 6-digit code',
+      submitCode: 'Verify Account',
+      resendCode: 'Resend Code',
+      wrongCode: 'Wrong code. Please try again.',
+      verified: 'Account Verified!',
       login: 'Login',
       signup: 'Sign Up',
-      email: 'Email',
-      password: 'Password',
-      confirmPassword: 'Confirm Password',
-      submitLogin: 'Login',
-      submitSignup: 'Create Account',
-      alreadyAccount: 'Already have an account?',
-      needAccount: "Don't have an account?",
-      loginNow: 'Login Now',
       logout: 'Logout',
-      requiredFields: 'All fields are required',
-      passNotMatch: 'Passwords do not match',
-      invalidPass: 'Password must be at least 6 characters',
-      verifyEmailSent: 'Verification email sent!',
-      verifyEmailAgain: 'Verify your email before using the site.',
-      resendVerification: 'Resend Verification Email',
-      verificationSent: 'Verification email has been resent!',
-      verificationError: 'Failed to resend verification email.',
-      emailNotVerified: 'Your email is not verified.',
-      verifyToContinue: 'Please verify your email address to continue.',
-      forgotPassword: 'Forgot Password?',
-      resetPassword: 'Send Reset Link',
-      backToLogin: 'Back to Login',
     },
     ar: {
       title: 'مُصغّر الصور الاحترافي',
@@ -106,49 +85,33 @@ const App = () => {
       originalSize: 'الحجم الأصلي',
       fileName: 'اسم الملف:',
       fileSize: 'حجم الملف:',
-      preview: 'معاينة مباشرة',
-      zoomIn: 'تكبير',
-      zoomOut: 'تصغير',
+      verifyToEdit: 'يرجى تفعيل البريد الإلكتروني لتتمكن من تعديل الملف الشخصي.',
+      enterCode: 'أدخل رمز التفعيل',
+      codeSent: 'تم إرسال رمز التفعيل إلى بريدك الإلكتروني.',
+      codeLabel: 'أدخل الرمز المكون من 6 أرقام',
+      submitCode: 'تفعيل الحساب',
+      resendCode: 'إعادة إرسال الرمز',
+      wrongCode: 'الرمز غير صحيح، من فضلك حاول مرة أخرى.',
+      verified: 'تم تفعيل الحساب بنجاح!',
       login: 'تسجيل الدخول',
       signup: 'إنشاء حساب',
-      email: 'البريد الإلكتروني',
-      password: 'كلمة المرور',
-      confirmPassword: 'تأكيد كلمة المرور',
-      submitLogin: 'دخول',
-      submitSignup: 'إنشاء الحساب',
-      alreadyAccount: 'لديك حساب بالفعل؟',
-      needAccount: 'لا تملك حسابًا؟',
-      loginNow: 'سجل دخولك الآن',
       logout: 'تسجيل الخروج',
-      requiredFields: 'جميع الحقول مطلوبة',
-      passNotMatch: 'كلمتا المرور غير متطابقتين',
-      invalidPass: 'يجب أن تكون كلمة المرور 6 خانات على الأقل',
-      verifyEmailSent: 'تم إرسال رسالة التفعيل!',
-      verifyEmailAgain: 'من فضلك فعل بريدك الإلكتروني قبل استخدام الموقع.',
-      resendVerification: 'إعادة إرسال رسالة التفعيل',
-      verificationSent: 'تم إعادة إرسال رسالة التفعيل بنجاح.',
-      verificationError: 'فشل إرسال رسالة التفعيل.',
-      emailNotVerified: 'بريدك الإلكتروني لم يتم تفعيله بعد.',
-      verifyToContinue: 'من فضلك فعل البريد لتتمكن من استخدام الموقع.',
-      forgotPassword: 'هل نسيت كلمة المرور؟',
-      resetPassword: 'إرسال رابط التعيين',
-      backToLogin: 'العودة إلى تسجيل الدخول',
     }
   };
 
   const t = translations[language];
 
-  // Check if user is logged in and verified
+  // Check if user is logged in
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setCurrentUser(user);
         setIsLoggedIn(true);
-        setIsVerified(user.emailVerified);
+        setProfileVerified(false); // Default: not verified until check
       } else {
         setCurrentUser(null);
         setIsLoggedIn(false);
-        setIsVerified(false);
+        setProfileVerified(false);
       }
     });
     return () => unsubscribe();
@@ -156,26 +119,15 @@ const App = () => {
 
   // Handle Sign Up
   const handleSignUp = async () => {
-    if (!email || !password || !confirmPassword) {
+    if (!email || !password || password !== confirmPassword) {
       alert(t.requiredFields);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      alert(t.passNotMatch);
-      return;
-    }
-
-    if (password.length < 6) {
-      alert(t.invalidPass);
       return;
     }
 
     try {
       await registerUser(email, password);
-      alert(t.verifyEmailSent);
-      setVerificationSent(true);
-      setAuthMode('login');
+      setVerificationCodeSent(true);
+      setShowVerificationModal(true);
     } catch (error) {
       alert(error.message);
     }
@@ -190,7 +142,7 @@ const App = () => {
 
     try {
       await loginUser(email, password);
-      setShowAuthModal(false);
+      setShowVerificationModal(false);
     } catch (error) {
       alert(error.message);
     }
@@ -200,7 +152,8 @@ const App = () => {
   const handleLogout = async () => {
     try {
       await logoutUser();
-      setIsVerified(false);
+      setIsLoggedIn(false);
+      setProfileVerified(false);
       setEmail('');
       setPassword('');
       setConfirmPassword('');
@@ -225,18 +178,36 @@ const App = () => {
     }
   };
 
-  // Re-send verification email
-  const resendVerificationEmail = async () => {
-    if (!currentUser) return;
+  // Submit verification code
+  const submitVerificationCode = () => {
+    if (verificationCode && enteredCode.join('') === verificationCode) {
+      alert(t.verified);
+      setProfileVerified(true);
+      setShowVerificationModal(false);
+    } else {
+      alert(t.wrongCode);
+    }
+  };
 
-    setResendingVerification(true);
-    try {
-      await sendEmailVerification(currentUser);
-      alert(t.verificationSent);
-    } catch (error) {
-      alert(t.verificationError + ': ' + error.message);
-    } finally {
-      setResendingVerification(false);
+  // Resend verification code
+  const resendVerificationCode = () => {
+    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+    setVerificationCode(newCode);
+    alert(`تم إعادة إرسال الرمز: ${newCode}`);
+  };
+
+  // Handle input change for each code digit
+  const handleCodeChange = (e, index) => {
+    const value = e.target.value;
+    if (/^[0-9]$/.test(value) || value === '') {
+      const newCode = [...enteredCode];
+      newCode[index] = value;
+      setEnteredCode(newCode);
+
+      // Move focus to next input
+      if (value && index < 5) {
+        document.getElementById(`code-${index + 1}`).focus();
+      }
     }
   };
 
@@ -366,7 +337,7 @@ const App = () => {
     }
   };
 
-  // Update height based on aspect ratio
+  // Update width based on aspect ratio
   useEffect(() => {
     if (aspectRatio && image) {
       const img = new Image();
@@ -378,7 +349,7 @@ const App = () => {
     }
   }, [width, aspectRatio, image]);
 
-  // Update width based on aspect ratio
+  // Update height based on aspect ratio
   useEffect(() => {
     if (aspectRatio && image) {
       const img = new Image();
@@ -404,135 +375,92 @@ const App = () => {
     setLanguage(language === 'en' ? 'ar' : 'en');
   };
 
-  // UI Components
-
   return (
     <>
       {!isLoggedIn ? (
         <div className={`min-h-screen flex items-center justify-center p-4 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
           <div className="w-full max-w-md p-6 rounded-lg shadow-xl bg-white dark:bg-gray-800">
-            <h2 className="text-2xl font-bold mb-6 text-center">{authMode === 'login' ? t.login : authMode === 'signup' ? t.signup : t.forgotPassword}</h2>
-
-            {authMode === 'login' && (
-              <>
-                <input
-                  type="email"
-                  placeholder={t.email}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
-                />
-                <input
-                  type="password"
-                  placeholder={t.password}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
-                />
-                <button
-                  onClick={handleLogin}
-                  className={`w-full py-2 rounded-md font-medium mt-2 ${
-                    darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
-                  }`}
-                >
-                  {t.submitLogin}
-                </button>
-                <p className="mt-4 text-center">
-                  {t.needAccount}{' '}
-                  <button onClick={() => setAuthMode('signup')} className="text-blue-500 hover:underline">{t.signup}</button>
-                </p>
-                <p className="mt-2 text-center">
-                  <button onClick={() => setAuthMode('reset-password')} className="text-red-500 hover:underline">{t.forgotPassword}</button>
-                </p>
-              </>
-            )}
-
+            <h2 className="text-2xl font-bold mb-6 text-center">Professional Image Resizer</h2>
+            <input
+              type="email"
+              placeholder={t.email}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
+            />
+            <input
+              type="password"
+              placeholder={t.password}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
+            />
             {authMode === 'signup' && (
-              <>
-                <input
-                  type="email"
-                  placeholder={t.email}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
-                />
-                <input
-                  type="password"
-                  placeholder={t.password}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
-                />
-                <input
-                  type="password"
-                  placeholder={t.confirmPassword}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
-                />
-                <button
-                  onClick={handleSignUp}
-                  className={`w-full py-2 rounded-md font-medium mt-2 ${
-                    darkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
-                  }`}
-                >
-                  {t.submitSignup}
-                </button>
-                <p className="mt-4 text-center">
-                  {t.alreadyAccount}{' '}
-                  <button onClick={() => setAuthMode('login')} className="text-blue-500 hover:underline">{t.loginNow}</button>
-                </p>
-              </>
+              <input
+                type="password"
+                placeholder={t.confirmPassword}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
+              />
             )}
-
-            {authMode === 'reset-password' && (
-              <>
-                <p className="mb-4 text-sm text-center">{t.resetPasswordDesc}</p>
-                <input
-                  type="email"
-                  placeholder={t.email}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
-                />
-                <button
-                  onClick={handlePasswordReset}
-                  className={`w-full py-2 rounded-md font-medium mt-2 ${
-                    darkMode ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                  }`}
-                >
-                  {t.resetPassword}
-                </button>
-                <p className="mt-4 text-center">
-                  <button onClick={() => setAuthMode('login')} className="text-blue-500 hover:underline">{t.backToLogin}</button>
-                </p>
-              </>
-            )}
+            <button
+              onClick={authMode === 'login' ? handleLogin : handleSignUp}
+              className="w-full py-2 rounded-md font-medium mt-2 bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              {authMode === 'login' ? t.login : t.signup}
+            </button>
+            <p className="mt-4 text-center">
+              {authMode === 'login' ? t.needAccount : t.alreadyAccount}{' '}
+              <button
+                onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                className="text-blue-500 hover:underline"
+              >
+                {authMode === 'login' ? t.signup : t.loginNow}
+              </button>
+            </p>
+            <p className="mt-2 text-center">
+              <button
+                onClick={() => setAuthMode('reset-password')}
+                className="text-red-500 hover:underline"
+              >
+                {t.forgotPassword}
+              </button>
+            </p>
           </div>
         </div>
-      ) : !isVerified ? (
+      ) : showVerificationModal ? (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
           <div className="max-w-md w-full p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md text-center">
-            <h2 className="text-2xl font-semibold mb-4">✓ {t.emailNotVerified}</h2>
-            <p className="mb-4">{t.verifyToContinue}</p>
+            <h2 className="text-2xl font-semibold mb-4">{t.enterCode}</h2>
+            <p className="mb-4">{t.codeSent}</p>
+
+            <div className="flex justify-center gap-2 mb-4">
+              {enteredCode.map((digit, idx) => (
+                <input
+                  key={idx}
+                  id={`code-${idx}`}
+                  type="text"
+                  maxLength="1"
+                  value={digit}
+                  onChange={(e) => handleCodeChange(e, idx)}
+                  className="w-10 h-10 text-center text-xl border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                />
+              ))}
+            </div>
+
             <button
-              onClick={resendVerificationEmail}
-              disabled={resendingVerification}
-              className={`py-2 px-4 rounded-md font-medium ${
-                resendingVerification
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : darkMode
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
+              onClick={submitVerificationCode}
+              className="py-2 px-4 rounded-md bg-green-500 hover:bg-green-600 text-white"
             >
-              {resendingVerification ? t.sending : t.resendVerification}
+              {t.submitCode}
             </button>
+
             <button
-              onClick={handleLogout}
-              className="ml-4 text-red-500 hover:text-red-700 text-sm underline"
+              onClick={resendVerificationCode}
+              className="ml-4 text-blue-500 hover:text-blue-700 underline"
             >
-              {t.logout}
+              {t.resendCode}
             </button>
           </div>
         </div>
@@ -572,7 +500,7 @@ const App = () => {
                   </svg>
                 ) : (
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    <path d="M21 12.79A9 9 0 1 11.21 3 7 7 0 0 0 21 12.79z" />
                   </svg>
                 )}
               </button>
@@ -597,7 +525,9 @@ const App = () => {
               </div>
               <div>
                 <h2 className="text-xl font-semibold">{currentUser?.email}</h2>
-                <p className="text-xs text-green-500">✓ {t.emailNotVerified}</p>
+                {!profileVerified && (
+                  <p className="text-xs text-yellow-500">{t.verifyToEdit}</p>
+                )}
               </div>
             </div>
 
@@ -620,7 +550,7 @@ const App = () => {
                 >
                   <div className="mb-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 1-2 2H5a2 0 1-2-2v-4" />
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 0 0 1-2-2v-4" />
                       <polyline points="17 8 12 3 7 8" />
                       <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
@@ -652,12 +582,12 @@ const App = () => {
                         {aspectRatio ? (
                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 1 10 0v4" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                           </svg>
                         ) : (
                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 1 9.9-2" />
+                            <path d="M7 11V7a5 5 0 0 1 9.9-2" />
                           </svg>
                         )}
                       </button>
@@ -787,9 +717,7 @@ const App = () => {
                     </button>
                   </>
                 ) : (
-                  <p className="text-center mt-10">
-                    {!image ? t.noImage : loading ? t.resizing : "Select size and click resize."}
-                  </p>
+                  <p className="text-center mt-10">{!image ? t.noImage : loading ? t.resizing : "Select size and click resize."}</p>
                 )}
               </div>
             </section>
