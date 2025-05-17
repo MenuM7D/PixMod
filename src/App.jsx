@@ -1,4 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import {
+  auth,
+  registerUser,
+  loginUser,
+  logoutUser,
+  onAuthStateChanged,
+} from './firebase';
 
 const App = () => {
   // Auth states
@@ -8,6 +15,7 @@ const App = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Profile info
   const [userName, setUserName] = useState(null);
@@ -30,7 +38,7 @@ const App = () => {
   // Translations
   const translations = {
     en: {
-      title: 'Professional Image Resifier',
+      title: 'Professional Image Resizer',
       upload: 'Upload Image',
       width: 'Width',
       height: 'Height',
@@ -48,10 +56,7 @@ const App = () => {
       fileName: 'File Name:',
       fileSize: 'File Size:',
       profile: 'Profile',
-      changeName: 'Change Username',
       editProfile: 'Edit Profile',
-      enterName: 'Enter your name',
-      update: 'Update',
       loginToEdit: 'You need to log in to edit your profile',
       requiredFields: 'All fields are required',
       passNotMatch: 'Passwords do not match',
@@ -76,10 +81,7 @@ const App = () => {
       fileName: 'اسم الملف:',
       fileSize: 'حجم الملف:',
       profile: 'الملف الشخصي',
-      changeName: 'تغيير الاسم',
       editProfile: 'تعديل الملف الشخصي',
-      enterName: 'أدخل اسمك',
-      update: 'تحديث',
       loginToEdit: 'يجب تسجيل الدخول لتتمكن من تعديل الملف الشخصي',
       requiredFields: 'جميع الحقول مطلوبة',
       passNotMatch: 'كلمتا المرور غير متطابقتين',
@@ -89,20 +91,48 @@ const App = () => {
 
   const t = translations[language];
 
-  // Handle Login Modal
-  const handleLogin = () => {
+  // Check if user is logged in
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsLoggedIn(true);
+        setUserName(user.email.split('@')[0]);
+        setCurrentUser(user);
+      } else {
+        setIsLoggedIn(false);
+        setUserName(null);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
+  // Toggle language
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'ar' : 'en');
+  };
+
+  // Handle Login
+  const handleLogin = async () => {
     if (!email || !password) {
       alert(t.requiredFields);
       return;
     }
 
-    // Simulate login
-    setIsLoggedIn(true);
-    setUserName(email.split('@')[0]);
-    setShowLoginModal(false);
+    try {
+      await loginUser(email, password);
+      setShowLoginModal(false);
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
-  const handleSignUp = () => {
+  // Handle Sign Up
+  const handleSignUp = async () => {
     if (!email || !password || !confirmPassword) {
       alert(t.requiredFields);
       return;
@@ -118,16 +148,23 @@ const App = () => {
       return;
     }
 
-    // Simulate sign up
-    setIsLoggedIn(true);
-    setUserName(email.split('@')[0]);
-    setShowLoginModal(false);
+    try {
+      await registerUser(email, password);
+      setUserName(email.split('@')[0]);
+      setShowLoginModal(false);
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
-  const handleLogout = () => {
-    if (window.confirm('هل تريد تسجيل الخروج؟')) {
-      setIsLoggedIn(false);
+  // Handle Logout
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
       setUserName(null);
+      setCurrentUser(null);
+    } catch (error) {
+      alert(error.message);
     }
   };
 
@@ -144,16 +181,6 @@ const App = () => {
       setUserName(newName);
       alert('تم تحديث الاسم بنجاح!');
     }
-  };
-
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
-
-  // Toggle language
-  const toggleLanguage = () => {
-    setLanguage(language === 'en' ? 'ar' : 'en');
   };
 
   // Handle image upload
@@ -240,6 +267,30 @@ const App = () => {
     link.click();
   };
 
+  // Update height based on aspect ratio
+  useEffect(() => {
+    if (aspectRatio && image) {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => {
+        const ratio = img.height / img.width;
+        setHeight(Math.round(width * ratio));
+      };
+    }
+  }, [width, aspectRatio, image]);
+
+  // Update width based on aspect ratio
+  useEffect(() => {
+    if (aspectRatio && image) {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => {
+        const ratio = img.width / img.height;
+        setWidth(Math.round(height * ratio));
+      };
+    }
+  }, [height, aspectRatio, image]);
+
   // Reset settings
   const resetSettings = () => {
     if (!image) return;
@@ -253,6 +304,18 @@ const App = () => {
       setFormat('png');
       setQuality(1);
       setResizedImage(null);
+    };
+  };
+
+  // Auto-size handler
+  const setToOriginalSize = () => {
+    if (!image) return;
+
+    const img = new Image();
+    img.src = image;
+    img.onload = () => {
+      setWidth(img.width);
+      setHeight(img.height);
     };
   };
 
@@ -283,61 +346,43 @@ const App = () => {
     }
   };
 
-  // Update height based on aspect ratio
-  useEffect(() => {
-    if (aspectRatio && image) {
-      const img = new Image();
-      img.src = image;
-      img.onload = () => {
-        const ratio = img.height / img.width;
-        setHeight(Math.round(width * ratio));
-      };
-    }
-  }, [width, aspectRatio, image]);
-
-  // Update width based on aspect ratio
-  useEffect(() => {
-    if (aspectRatio && image) {
-      const img = new Image();
-      img.src = image;
-      img.onload = () => {
-        const ratio = img.width / img.height;
-        setWidth(Math.round(height * ratio));
-      };
-    }
-  }, [height, aspectRatio, image]);
-
-  // Toggle dark mode class
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
-
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
       {/* Header */}
       <header className="p-4 md:p-6 flex justify-between items-center shadow-md bg-opacity-80 backdrop-blur-md backdrop-saturate-150 border-b dark:border-gray-700">
         <h1 className="text-xl md:text-3xl font-bold">{t.title}</h1>
-        <div className="flex gap-3 md:gap-4 items-center">
-          {/* Profile Button */}
+
+        <div className="flex gap-2 md:gap-4 items-center">
+          {/* Mobile: Vertical Profile Button */}
           <button
             onClick={handleEditProfile}
-            className={`py-2 px-4 rounded-lg flex items-center gap-2 ${
+            className={`py-2 px-3 rounded-lg flex flex-col items-center justify-center ${
+              darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'
+            } sm:flex hidden`}
+            aria-label="Profile"
+          >
+            <span className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+              {userName ? userName.charAt(0).toUpperCase() : '?'}
+            </span>
+            <span className="text-xs mt-1 truncate max-w-[100px] text-center">
+              {userName || 'Guest'}
+            </span>
+          </button>
+
+          {/* Mobile: Horizontal Profile Button */}
+          <button
+            onClick={handleEditProfile}
+            className={`py-2 px-3 rounded-lg flex items-center gap-2 sm:hidden ${
               darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'
             }`}
+            aria-label="Profile"
           >
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold">
+            <span className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
               {userName ? userName.charAt(0).toUpperCase() : '?'}
-            </div>
-            <div className="text-left">
-              <span className="block font-semibold">{userName || 'Guest'}</span>
-              {isLoggedIn && (
-                <span className="text-xs text-green-500">✓ Verified</span>
-              )}
-            </div>
+            </span>
+            <span className="text-xs truncate max-w-[100px]">
+              {userName || 'Guest'}
+            </span>
           </button>
 
           {/* Language Switcher */}
@@ -370,13 +415,22 @@ const App = () => {
               </svg>
             ) : (
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                <path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 0 0 21 12.79z" />
               </svg>
             )}
           </button>
 
-          {/* Logout Button */}
-          {isLoggedIn && (
+          {/* Login/Logout Button */}
+          {!isLoggedIn ? (
+            <button
+              onClick={() => setShowLoginModal(true)}
+              className={`py-2 px-4 rounded-md font-medium ${
+                darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
+            >
+              {t.login}
+            </button>
+          ) : (
             <button
               onClick={handleLogout}
               className={`py-2 px-4 rounded-md font-medium ${
@@ -384,18 +438,6 @@ const App = () => {
               }`}
             >
               {t.logout || 'Logout'}
-            </button>
-          )}
-
-          {/* Login Button (when not logged in) */}
-          {!isLoggedIn && (
-            <button
-              onClick={() => setShowLoginModal(true)}
-              className={`py-2 px-4 rounded-md font-medium ${
-                darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
-            >
-              {t.login || 'Login'}
             </button>
           )}
         </div>
@@ -463,7 +505,7 @@ const App = () => {
 
       {/* Main Content */}
       <main className="container mx-auto p-4 md:p-6">
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+        <section className="grid grid-cols-1 gap-6">
           {/* Upload Section */}
           <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-blue-500/20' : 'bg-white hover:shadow-blue-300/20'}`}>
             <h2 className="text-xl font-semibold mb-4">{t.upload}</h2>
@@ -480,11 +522,11 @@ const App = () => {
                     : 'border-gray-300 hover:border-blue-400 bg-gray-50 hover:bg-gray-100'
               }`}
             >
-              <div className="mb-3">
+              <div className="mb-3 mx-auto">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
               </div>
               <span className="block text-sm md:text-base">{t.dragDrop}</span>
@@ -513,13 +555,13 @@ const App = () => {
                   >
                     {aspectRatio ? (
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
                     ) : (
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 9.9-2"></path>
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 9.9-2" />
                       </svg>
                     )}
                   </button>
@@ -555,7 +597,7 @@ const App = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={setToOriginalSize}
-                    className={`py-1 px-2 rounded-md text-xs transition-all hover:opacity-90 ${
+                    className={`py-1 px-2 rounded-md text-xs hover:opacity-90 ${
                       darkMode ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-indigo-500 hover:bg-indigo-600 text-white'
                     }`}
                   >
@@ -563,7 +605,7 @@ const App = () => {
                   </button>
                   <button
                     onClick={zoomIn}
-                    className={`py-1 px-2 rounded-md text-xs transition-all hover:opacity-90 ${
+                    className={`py-1 px-2 rounded-md text-xs hover:opacity-90 ${
                       darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
                     }`}
                   >
@@ -571,7 +613,7 @@ const App = () => {
                   </button>
                   <button
                     onClick={zoomOut}
-                    className={`py-1 px-2 rounded-md text-xs transition-all hover:opacity-90 ${
+                    className={`py-1 px-2 rounded-md text-xs hover:opacity-90 ${
                       darkMode ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-purple-500 hover:bg-purple-600 text-white'
                     }`}
                   >
@@ -655,9 +697,7 @@ const App = () => {
                 </button>
               </>
             ) : (
-              <p className="text-center mt-10">
-                {!image ? t.noImage : loading ? t.resizing : "Select size and click resize."}
-              </p>
+              <p className="text-center mt-10">{!image ? t.noImage : loading ? t.resizing : "Select size and click resize."}</p>
             )}
           </div>
         </section>
