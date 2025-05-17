@@ -5,26 +5,25 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  sendEmailVerification
+  sendEmailVerification,
+  sendPasswordResetEmail    // ✅ تم إضافتها
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
 
-// 🔑 بيانات مشروعك من Firebase
+// ⚠️ استبدل هذه البيانات بمعلومات مشروعك من Firebase Console
 const firebaseConfig = {
   apiKey: "AIzaSyCn3stWO7QelOmGPyqQ-1jVXy9Y0y5uPgA",
   authDomain: "image-resizer-m7d.firebaseapp.com",
   projectId: "image-resizer-m7d",
   storageBucket: "image-resizer-m7d.appspot.com",
   messagingSenderId: "700892046577",
-  appId: "1:700892046577:web:5c820df7f4a2ce26b5bfa2" // يمكنك الحصول عليه من Firebase Console > Project Settings > Your apps
+  appId: "1:700892046577:web:5c820df7f4a2ce26b5bfa2"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 
-// 📦 تسجيل مستخدم جديد + إرسال تفعيل + حفظ بيانات أولية
+// 📦 تسجيل مستخدم جديد + إرسال رسالة التفعيل
 const registerUser = async (email, password) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -32,13 +31,6 @@ const registerUser = async (email, password) => {
 
     // ✉️ إرسال رسالة التفعيل
     await sendEmailVerification(user);
-
-    // 💾 حفظ بيانات المستخدم في Firestore
-    await setDoc(doc(db, "users", user.uid), {
-      email: user.email,
-      profilePic: null,
-      createdAt: new Date(),
-    });
 
     return user;
   } catch (error) {
@@ -66,4 +58,12 @@ const logoutUser = async () => {
   }
 };
 
-export { auth, registerUser, loginUser, logoutUser, onAuthStateChanged };
+export {
+  auth,
+  registerUser,
+  loginUser,
+  logoutUser,
+  onAuthStateChanged,
+  sendEmailVerification,
+  sendPasswordResetEmail    // ✅ تم التصدير بنجاح
+};
