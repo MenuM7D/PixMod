@@ -1,31 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {
-  auth,
-  registerUser,
-  loginUser,
-  logoutUser,
-  onAuthStateChanged,
-  sendEmailVerification,
-  sendPasswordResetEmail
-} from './firebase';
 
 const App = () => {
-  // Auth states
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // login or signup or reset-password
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [currentUser, setCurrentUser] = useState(null);
-
-  // Account verification state
-  const [isVerified, setIsVerified] = useState(false);
-  const [verificationSent, setVerificationSent] = useState(false);
-  const [loadingVerification, setLoadingVerification] = useState(false);
-  const [resendingVerification, setResendingVerification] = useState(false);
-
-  // Image Resizer State
   const [darkMode, setDarkMode] = useState(false);
   const [language, setLanguage] = useState('en');
   const [image, setImage] = useState(null);
@@ -39,6 +14,17 @@ const App = () => {
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Auth states
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [showVerifyMessage, setShowVerifyMessage] = useState(false);
+
+  // Login / Signup Form
+  const [authMode, setAuthMode] = useState('login'); // login or signup
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Translations
   const translations = {
@@ -78,15 +64,11 @@ const App = () => {
       passNotMatch: 'Passwords do not match',
       invalidPass: 'Password must be at least 6 characters',
       verifyEmailSent: 'Verification email sent!',
-      verifyEmailAgain: 'Verify your email before using the site.',
-      resendVerification: 'Resend Verification Email',
-      verificationSent: 'Verification email has been resent!',
-      verificationError: 'Failed to resend verification email.',
-      emailNotVerified: 'Your email is not verified.',
-      verifyToContinue: 'Please verify your email address to continue.',
-      forgotPassword: 'Forgot Password?',
-      resetPassword: 'Send Reset Link',
-      backToLogin: 'Back to Login',
+      profileSettings: 'Profile Settings',
+      changePassword: 'Change Password',
+      updateProfile: 'Update Profile',
+      profileOnlyVerified: 'You must verify your email to access this section',
+      resendVerification: 'Resend Verification Email'
     },
     ar: {
       title: 'مُصغّر الصور الاحترافي',
@@ -124,15 +106,11 @@ const App = () => {
       passNotMatch: 'كلمتا المرور غير متطابقتين',
       invalidPass: 'يجب أن تكون كلمة المرور 6 خانات على الأقل',
       verifyEmailSent: 'تم إرسال رسالة التفعيل!',
-      verifyEmailAgain: 'من فضلك فعل بريدك الإلكتروني قبل استخدام الموقع.',
-      resendVerification: 'إعادة إرسال رسالة التفعيل',
-      verificationSent: 'تم إعادة إرسال رسالة التفعيل بنجاح.',
-      verificationError: 'فشل إرسال رسالة التفعيل.',
-      emailNotVerified: 'بريدك الإلكتروني لم يتم تفعيله بعد.',
-      verifyToContinue: 'من فضلك فعل البريد لتتمكن من استخدام الموقع.',
-      forgotPassword: 'هل نسيت كلمة المرور؟',
-      resetPassword: 'إرسال رابط التعيين',
-      backToLogin: 'العودة إلى تسجيل الدخول',
+      profileSettings: 'إعدادات الملف الشخصي',
+      changePassword: 'تغيير كلمة المرور',
+      updateProfile: 'تحديث البيانات',
+      profileOnlyVerified: 'يجب تفعيل البريد لتتمكن من تعديل بيانات الملف الشخصي',
+      resendVerification: 'إعادة إرسال رسالة التفعيل'
     }
   };
 
@@ -140,22 +118,20 @@ const App = () => {
 
   // Check if user is logged in and verified
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const checkAuth = () => {
+      const user = localStorage.getItem('user');
       if (user) {
-        setCurrentUser(user);
+        const parsedUser = JSON.parse(user);
+        setCurrentUser(parsedUser);
         setIsLoggedIn(true);
-        setIsVerified(user.emailVerified);
-      } else {
-        setCurrentUser(null);
-        setIsLoggedIn(false);
-        setIsVerified(false);
+        setShowVerifyMessage(!parsedUser.isVerified);
       }
-    });
-    return () => unsubscribe();
+    };
+    checkAuth();
   }, []);
 
   // Handle Sign Up
-  const handleSignUp = async () => {
+  const handleSignUp = () => {
     if (!email || !password || !confirmPassword) {
       alert(t.requiredFields);
       return;
@@ -171,76 +147,53 @@ const App = () => {
       return;
     }
 
-    try {
-      await registerUser(email, password);
-      alert(t.verifyEmailSent);
-      setVerificationSent(true);
-      setAuthMode('login');
-    } catch (error) {
-      alert(error.message);
-    }
+    // Simulate Firebase sign-up
+    const fakeUser = {
+      email,
+      isVerified: false
+    };
+
+    localStorage.setItem('user', JSON.stringify(fakeUser));
+    setCurrentUser(fakeUser);
+    setIsLoggedIn(true);
+    setShowVerifyMessage(true);
+    alert(t.verifyEmailSent);
+    setAuthMode('login');
   };
 
   // Handle Login
-  const handleLogin = async () => {
+  const handleLogin = () => {
     if (!email || !password) {
       alert(t.requiredFields);
       return;
     }
 
-    try {
-      await loginUser(email, password);
-      setShowAuthModal(false);
-    } catch (error) {
-      alert(error.message);
-    }
+    // Simulate login
+    const fakeUser = {
+      email,
+      isVerified: true
+    };
+
+    localStorage.setItem('user', JSON.stringify(fakeUser));
+    setCurrentUser(fakeUser);
+    setIsLoggedIn(true);
+    setShowVerifyMessage(false);
   };
 
   // Handle Logout
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
-      setIsVerified(false);
-      setEmail('');
-      setPassword('');
-      setConfirmPassword('');
-    } catch (error) {
-      alert(error.message);
-    }
-  };
-
-  // Send password reset email
-  const handlePasswordReset = async () => {
-    if (!email) {
-      alert('الرجاء إدخال البريد الإلكتروني');
-      return;
-    }
-
-    try {
-      await sendPasswordResetEmail(auth, email);
-      alert(t.resetPasswordSuccess);
-      setAuthMode('login');
-    } catch (error) {
-      alert(t.resetPasswordError + ': ' + error.message);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setCurrentUser(null);
+    setIsLoggedIn(false);
+    setShowVerifyMessage(false);
   };
 
   // Re-send verification email
-  const resendVerificationEmail = async () => {
-    if (!currentUser) return;
-
-    setResendingVerification(true);
-    try {
-      await sendEmailVerification(currentUser);
-      alert(t.verificationSent);
-    } catch (error) {
-      alert(t.verificationError + ': ' + error.message);
-    } finally {
-      setResendingVerification(false);
-    }
+  const resendVerification = () => {
+    alert('تم إرسال رسالة التفعيل مرة أخرى!');
   };
 
-  // Image Upload Handlers
+  // Handle image upload
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -262,6 +215,7 @@ const App = () => {
     }
   };
 
+  // Drag & Drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -307,7 +261,7 @@ const App = () => {
         } else {
           resizedDataURL = canvas.toDataURL('image/png');
         }
-        setResizedImage(resizedDataURL);
+        setResizedImage(resizedImage);
         setLoading(false);
       }, 600);
     };
@@ -322,6 +276,30 @@ const App = () => {
     link.download = `resized-${Date.now()}.${format}`;
     link.click();
   };
+
+  // Update height based on aspect ratio
+  useEffect(() => {
+    if (aspectRatio && image) {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => {
+        const ratio = img.height / img.width;
+        setHeight(Math.round(width * ratio));
+      };
+    }
+  }, [width, aspectRatio, image]);
+
+  // Update width based on aspect ratio
+  useEffect(() => {
+    if (aspectRatio && image) {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => {
+        const ratio = img.width / img.height;
+        setWidth(Math.round(height * ratio));
+      };
+    }
+  }, [height, aspectRatio, image]);
 
   // Reset settings
   const resetSettings = () => {
@@ -366,185 +344,72 @@ const App = () => {
     }
   };
 
-  // Update height based on aspect ratio
-  useEffect(() => {
-    if (aspectRatio && image) {
-      const img = new Image();
-      img.src = image;
-      img.onload = () => {
-        const ratio = img.height / img.width;
-        setHeight(Math.round(width * ratio));
-      };
-    }
-  }, [width, aspectRatio, image]);
-
-  // Update width based on aspect ratio
-  useEffect(() => {
-    if (aspectRatio && image) {
-      const img = new Image();
-      img.src = image;
-      img.onload = () => {
-        const ratio = img.width / img.height;
-        setWidth(Math.round(height * ratio));
-      };
-    }
-  }, [height, aspectRatio, image]);
-
-  // Toggle dark mode
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
-
-  // Toggle language
-  const toggleLanguage = () => {
-    setLanguage(language === 'en' ? 'ar' : 'en');
-  };
-
-  // UI Components
-
   return (
     <>
       {!isLoggedIn ? (
         <div className={`min-h-screen flex items-center justify-center p-4 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
           <div className="w-full max-w-md p-6 rounded-lg shadow-xl bg-white dark:bg-gray-800">
-            <h2 className="text-2xl font-bold mb-6 text-center">{authMode === 'login' ? t.login : authMode === 'signup' ? t.signup : t.forgotPassword}</h2>
-
-            {authMode === 'login' && (
-              <>
-                <input
-                  type="email"
-                  placeholder={t.email}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
-                />
-                <input
-                  type="password"
-                  placeholder={t.password}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
-                />
-                <button
-                  onClick={handleLogin}
-                  className={`w-full py-2 rounded-md font-medium mt-2 ${
-                    darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
-                  }`}
-                >
-                  {t.submitLogin}
-                </button>
-                <p className="mt-4 text-center">
-                  {t.needAccount}{' '}
-                  <button onClick={() => setAuthMode('signup')} className="text-blue-500 hover:underline">{t.signup}</button>
-                </p>
-                <p className="mt-2 text-center">
-                  <button onClick={() => setAuthMode('reset-password')} className="text-red-500 hover:underline">{t.forgotPassword}</button>
-                </p>
-              </>
-            )}
+            <h2 className="text-2xl font-bold mb-6 text-center">{authMode === 'login' ? t.login : t.signup}</h2>
 
             {authMode === 'signup' && (
-              <>
-                <input
-                  type="email"
-                  placeholder={t.email}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
-                />
-                <input
-                  type="password"
-                  placeholder={t.password}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
-                />
-                <input
-                  type="password"
-                  placeholder={t.confirmPassword}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
-                />
-                <button
-                  onClick={handleSignUp}
-                  className={`w-full py-2 rounded-md font-medium mt-2 ${
-                    darkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
-                  }`}
-                >
-                  {t.submitSignup}
-                </button>
-                <p className="mt-4 text-center">
-                  {t.alreadyAccount}{' '}
-                  <button onClick={() => setAuthMode('login')} className="text-blue-500 hover:underline">{t.loginNow}</button>
-                </p>
-              </>
+              <input
+                type="email"
+                placeholder={t.email}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
+              />
             )}
-
-            {authMode === 'reset-password' && (
-              <>
-                <p className="mb-4 text-sm text-center">{t.resetPasswordDesc}</p>
-                <input
-                  type="email"
-                  placeholder={t.email}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
-                />
-                <button
-                  onClick={handlePasswordReset}
-                  className={`w-full py-2 rounded-md font-medium mt-2 ${
-                    darkMode ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                  }`}
-                >
-                  {t.resetPassword}
-                </button>
-                <p className="mt-4 text-center">
-                  <button onClick={() => setAuthMode('login')} className="text-blue-500 hover:underline">{t.backToLogin}</button>
-                </p>
-              </>
+            <input
+              type="email"
+              placeholder={t.email}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
+            />
+            <input
+              type="password"
+              placeholder={t.password}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
+            />
+            {authMode === 'signup' && (
+              <input
+                type="password"
+                placeholder={t.confirmPassword}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none dark:bg-gray-700 dark:border-gray-600`}
+              />
             )}
-          </div>
-        </div>
-      ) : !isVerified ? (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-          <div className="max-w-md w-full p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md text-center">
-            <h2 className="text-2xl font-semibold mb-4">✓ {t.emailNotVerified}</h2>
-            <p className="mb-4">{t.verifyToContinue}</p>
             <button
-              onClick={resendVerificationEmail}
-              disabled={resendingVerification}
-              className={`py-2 px-4 rounded-md font-medium ${
-                resendingVerification
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : darkMode
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-blue-500 hover:bg-blue-600 text-white'
+              onClick={authMode === 'login' ? handleLogin : handleSignUp}
+              className={`w-full py-2 rounded-md font-medium mt-2 ${
+                darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
               }`}
             >
-              {resendingVerification ? t.sending : t.resendVerification}
+              {authMode === 'login' ? t.submitLogin : t.submitSignup}
             </button>
-            <button
-              onClick={handleLogout}
-              className="ml-4 text-red-500 hover:text-red-700 text-sm underline"
-            >
-              {t.logout}
-            </button>
+            <p className="mt-4 text-center">
+              {authMode === 'login' ? t.needAccount : t.alreadyAccount}{' '}
+              <button
+                onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                className="text-blue-500 hover:underline"
+              >
+                {authMode === 'login' ? t.signup : t.loginNow}
+              </button>
+            </p>
           </div>
         </div>
       ) : (
         <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
-          {/* Main App UI */}
           <header className="p-4 md:p-6 flex justify-between items-center shadow-md bg-opacity-80 backdrop-blur-md backdrop-saturate-150 border-b dark:border-gray-700">
             <h1 className="text-xl md:text-3xl font-bold">{t.title}</h1>
             <div className="flex gap-3 md:gap-4">
               {/* Language Switcher */}
               <button
-                onClick={toggleLanguage}
+                onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
                 className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
                   darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
                 }`}
@@ -572,12 +437,27 @@ const App = () => {
                   </svg>
                 ) : (
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    <path d="M21 12.79A9 9 0 1 11.21 3 7 7 0 0 0 21 12.79z" />
                   </svg>
                 )}
               </button>
             </div>
           </header>
+
+          {/* Show verification message only if needed */}
+          {showVerifyMessage && (
+            <div className="container mx-auto p-4 md:p-6">
+              <div className="max-w-md mx-auto p-4 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 rounded-md text-center mb-4">
+                <p>{t.profileOnlyVerified}</p>
+                <button
+                  onClick={resendVerification}
+                  className="text-sm underline mt-2 inline-block text-yellow-700 dark:text-yellow-400"
+                >
+                  {t.resendVerification}
+                </button>
+              </div>
+            </div>
+          )}
 
           <main className="container mx-auto p-4 md:p-6">
             <div className="flex justify-end mb-4">
@@ -597,7 +477,9 @@ const App = () => {
               </div>
               <div>
                 <h2 className="text-xl font-semibold">{currentUser?.email}</h2>
-                <p className="text-xs text-green-500">✓ {t.emailNotVerified}</p>
+                {!currentUser?.isVerified && (
+                  <p className="text-xs text-yellow-500">⚠️ {t.profileOnlyVerified}</p>
+                )}
               </div>
             </div>
 
@@ -620,7 +502,7 @@ const App = () => {
                 >
                   <div className="mb-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 1-2 2H5a2 0 1-2-2v-4" />
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 0 0 1-2-2v-4" />
                       <polyline points="17 8 12 3 7 8" />
                       <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
@@ -652,12 +534,12 @@ const App = () => {
                         {aspectRatio ? (
                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 1 10 0v4" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                           </svg>
                         ) : (
                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 1 9.9-2" />
+                            <path d="M7 11V7a5 5 0 0 1 9.9-2" />
                           </svg>
                         )}
                       </button>
@@ -671,7 +553,9 @@ const App = () => {
                           value={width}
                           onChange={(e) => setWidth(parseInt(e.target.value))}
                           min="1"
-                          className={`w-full px-3 py-2 border rounded-md focus:ring ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300 text-gray-800'}`}
+                          className={`w-full px-3 py-2 border rounded-md focus:ring dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                            darkMode ? 'focus:ring-blue-400' : 'focus:ring-blue-200'
+                          }`}
                         />
                       </div>
                       <div>
@@ -681,7 +565,9 @@ const App = () => {
                           value={height}
                           onChange={(e) => setHeight(parseInt(e.target.value))}
                           min="1"
-                          className={`w-full px-3 py-2 border rounded-md focus:ring ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300 text-gray-800'}`}
+                          className={`w-full px-3 py-2 border rounded-md focus:ring dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                            darkMode ? 'focus:ring-blue-400' : 'focus:ring-blue-200'
+                          }`}
                         />
                       </div>
                     </div>
@@ -718,7 +604,9 @@ const App = () => {
                       <select
                         value={format}
                         onChange={(e) => setFormat(e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-md focus:ring ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300 text-gray-800'}`}
+                        className={`w-full px-3 py-2 border rounded-md focus:ring dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                          darkMode ? 'focus:ring-blue-400' : 'focus:ring-blue-200'
+                        }`}
                       >
                         <option value="png">PNG</option>
                         <option value="jpg">JPG</option>
@@ -787,9 +675,7 @@ const App = () => {
                     </button>
                   </>
                 ) : (
-                  <p className="text-center mt-10">
-                    {!image ? t.noImage : loading ? t.resizing : "Select size and click resize."}
-                  </p>
+                  <p className="text-center mt-10">{!image ? t.noImage : loading ? t.resizing : "Select size and click resize."}</p>
                 )}
               </div>
             </section>
