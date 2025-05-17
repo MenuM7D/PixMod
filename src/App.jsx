@@ -415,7 +415,7 @@ const App = () => {
               </svg>
             ) : (
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                <path d="M21 12.79A9 9 0 1 11.21 3 7 7 0 0 0 21 12.79z" />
               </svg>
             )}
           </button>
@@ -443,69 +443,9 @@ const App = () => {
         </div>
       </header>
 
-      {/* Login Modal */}
-      {showLoginModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className={`w-full max-w-md mx-auto p-6 rounded-lg shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-            <h2 className="text-2xl font-bold mb-4 text-center">
-              {authMode === 'login' ? t.login : t.signup}
-            </h2>
-            {authMode === 'signup' && (
-              <input
-                type="email"
-                placeholder={t.email}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={`w-full px-4 py-2 mb-4 border rounded-md dark:bg-gray-700 dark:border-gray-600`}
-              />
-            )}
-            <input
-              type="email"
-              placeholder={t.email}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={`w-full px-4 py-2 mb-4 border rounded-md dark:bg-gray-700 dark:border-gray-600`}
-            />
-            <input
-              type="password"
-              placeholder={t.password}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={`w-full px-4 py-2 mb-4 border rounded-md dark:bg-gray-700 dark:border-gray-600`}
-            />
-            {authMode === 'signup' && (
-              <input
-                type="password"
-                placeholder={t.confirmPassword}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`w-full px-4 py-2 mb-4 border rounded-md dark:bg-gray-700 dark:border-gray-600`}
-              />
-            )}
-            <button
-              onClick={authMode === 'login' ? handleLogin : handleSignUp}
-              className={`w-full py-2 rounded-md font-medium mt-2 ${
-                darkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
-              }`}
-            >
-              {authMode === 'login' ? t.login : t.signup}
-            </button>
-            <p className="mt-4 text-center">
-              {authMode === 'login' ? t.needAccount : t.alreadyAccount}{' '}
-              <button
-                onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-                className="text-blue-500 hover:underline"
-              >
-                {authMode === 'login' ? t.signup : t.loginNow}
-              </button>
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Main Content */}
       <main className="container mx-auto p-4 md:p-6">
-        <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <section className="grid grid-cols-1 gap-6">
           {/* Upload Section */}
           <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-blue-500/20' : 'bg-white hover:shadow-blue-300/20'}`}>
             <h2 className="text-xl font-semibold mb-4">{t.upload}</h2>
@@ -524,24 +464,27 @@ const App = () => {
             >
               <div className="mb-3 mx-auto">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
                 </svg>
               </div>
               <span className="block text-sm md:text-base">{t.dragDrop}</span>
-              <input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+              <input
+                id="image-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
             </label>
-
             {image && (
               <div className="mt-4 space-y-2">
                 <p><strong>{t.fileName}</strong> {fileName}</p>
                 <p><strong>{t.fileSize}</strong> {Math.round(fileSize)} KB</p>
               </div>
             )}
-
             {!image && <p className="mt-4 text-center">{t.noImage}</p>}
-
             {image && (
               <div className="mt-6 space-y-4">
                 <div className="flex items-center justify-between">
@@ -566,7 +509,6 @@ const App = () => {
                     )}
                   </button>
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block mb-2">{t.width}</label>
@@ -593,7 +535,6 @@ const App = () => {
                     />
                   </div>
                 </div>
-
                 <div className="flex gap-2">
                   <button
                     onClick={setToOriginalSize}
@@ -620,7 +561,6 @@ const App = () => {
                     {t.zoomOut}
                   </button>
                 </div>
-
                 <div>
                   <label className="block mb-2">{t.format}</label>
                   <select
@@ -634,7 +574,6 @@ const App = () => {
                     <option value="jpg">JPG</option>
                   </select>
                 </div>
-
                 {format === 'jpg' && (
                   <div>
                     <label className="block mb-2">{t.quality}</label>
@@ -653,7 +592,6 @@ const App = () => {
                     </div>
                   </div>
                 )}
-
                 <div className="flex gap-3 mt-4">
                   <button
                     onClick={resetSettings}
