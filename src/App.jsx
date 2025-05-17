@@ -1,26 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import {
   auth,
-  storage,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  ref,
-  uploadBytes,
-  getDownloadURL
+  registerUser,
+  loginUser,
+  logoutUser,
+  onAuthStateChanged
 } from './firebase';
 
 const App = () => {
   // Auth states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState('login');
+  const [authMode, setAuthMode] = useState('login'); // login or signup
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
-  const [profilePic, setProfilePic] = useState(null);
-  const [uploading, setUploading] = useState(false);
 
   // Image Resizer State
   const [darkMode, setDarkMode] = useState(false);
@@ -42,10 +37,33 @@ const App = () => {
     setDarkMode(!darkMode);
   };
 
+  // Toggle language
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'ar' : 'en');
+  };
+
   // Translations
   const translations = {
     en: {
       title: 'Professional Image Resizer',
+      upload: 'Upload Image',
+      width: 'Width',
+      height: 'Height',
+      resize: 'Resize Image',
+      download: 'Download Resized Image',
+      noImage: 'No image uploaded yet.',
+      resizing: 'Resizing...',
+      dragDrop: 'Drag & Drop or Click to Upload',
+      lockRatio: 'Lock Aspect Ratio',
+      unlockRatio: 'Unlock Aspect Ratio',
+      format: 'Format',
+      quality: 'Quality',
+      reset: 'Reset',
+      originalSize: 'Original Size',
+      fileName: 'File Name:',
+      fileSize: 'File Size:',
+      zoomIn: 'Zoom In',
+      zoomOut: 'Zoom Out',
       login: 'Login',
       signup: 'Sign Up',
       email: 'Email',
@@ -57,14 +75,31 @@ const App = () => {
       needAccount: "Don't have an account?",
       loginNow: 'Login Now',
       logout: 'Logout',
-      uploadProfile: 'Upload Profile Picture',
-      invalidPass: 'Password must contain letters and numbers',
+      requiredFields: 'All fields are required',
       passNotMatch: 'Passwords do not match',
-      userExists: 'User with this email already exists',
-      requiredFields: 'All fields are required'
+      invalidPass: 'Password must be at least 6 characters',
+      verifyEmailSent: 'Verification email sent!',
     },
     ar: {
       title: 'مُصغّر الصور الاحترافي',
+      upload: 'تحميل صورة',
+      width: 'العرض',
+      height: 'الارتفاع',
+      resize: 'تغيير الحجم',
+      download: 'تنزيل الصورة المصغرة',
+      noImage: 'لم يتم تحميل أي صورة بعد.',
+      resizing: 'جاري التغيير...',
+      dragDrop: 'اسحب وأفلت أو اضغط لتحميل صورة',
+      lockRatio: 'قفل نسبة الأبعاد',
+      unlockRatio: 'إلغاء قفل النسبة',
+      format: 'التنسيق',
+      quality: 'الجودة',
+      reset: 'إعادة ضبط',
+      originalSize: 'الحجم الأصلي',
+      fileName: 'اسم الملف:',
+      fileSize: 'حجم الملف:',
+      zoomIn: 'تكبير',
+      zoomOut: 'تصغير',
       login: 'تسجيل الدخول',
       signup: 'إنشاء حساب',
       email: 'البريد الإلكتروني',
@@ -76,36 +111,28 @@ const App = () => {
       needAccount: 'لا تملك حسابًا؟',
       loginNow: 'سجل دخولك الآن',
       logout: 'تسجيل الخروج',
-      uploadProfile: 'رفع صورة الملف الشخصي',
-      invalidPass: 'يجب أن تحتوي كلمة المرور على حروف وأرقام',
+      requiredFields: 'جميع الحقول مطلوبة',
       passNotMatch: 'كلمتا المرور غير متطابقتين',
-      userExists: 'المستخدم موجود مسبقًا',
-      requiredFields: 'جميع الحقول مطلوبة'
-    }
+      invalidPass: 'يجب أن تكون كلمة المرور 6 خانات على الأقل',
+      verifyEmailSent: 'تم إرسال رسالة التفعيل إلى بريدك الإلكتروني',
+    },
   };
 
   const t = translations[language];
 
   // Check if user is logged in
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setCurrentUser(user);
         setIsLoggedIn(true);
-        fetchProfilePic(user.email);
       } else {
         setCurrentUser(null);
         setIsLoggedIn(false);
       }
     });
-
     return () => unsubscribe();
   }, []);
-
-  const fetchProfilePic = async (email) => {
-    // هنا يمكنك استخدام Firestore لجلب صورة المستخدم
-    // سيتم شرح ذلك في الخطوة القادمة
-  };
 
   // Handle Sign Up
   const handleSignUp = async () => {
@@ -120,13 +147,17 @@ const App = () => {
     }
 
     if (password.length < 6) {
-      alert('Password must be at least 6 characters.');
+      alert(t.invalidPass);
       return;
     }
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      await registerUser(email, password);
+      alert(t.verifyEmailSent);
       setShowAuthModal(false);
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
     } catch (error) {
       alert(error.message);
     }
@@ -140,8 +171,10 @@ const App = () => {
     }
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await loginUser(email, password);
       setShowAuthModal(false);
+      setEmail('');
+      setPassword('');
     } catch (error) {
       alert(error.message);
     }
@@ -149,37 +182,20 @@ const App = () => {
 
   // Handle Logout
   const handleLogout = async () => {
-    await signOut(auth);
-    setIsLoggedIn(false);
-    setCurrentUser(null);
-    setProfilePic(null);
-  };
-
-  // Handle Profile Picture Upload
-  const handleProfilePictureUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setUploading(true);
-    const storageRef = ref(storage, `profile_pics/${currentUser.uid}`);
     try {
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      setProfilePic(url);
-      // يمكنك حفظ الرابط في Firestore هنا
+      await logoutUser();
+      setIsLoggedIn(false);
     } catch (error) {
-      alert('Error uploading profile picture');
-    } finally {
-      setUploading(false);
+      alert(error.message);
     }
   };
 
-  // Handle Image Upload
+  // Image Upload Handlers
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       setFileName(file.name);
-      setFileSize(file.size / 1024); // in KB
+      setFileSize(file.size / 1024); // KB
 
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -196,7 +212,6 @@ const App = () => {
     }
   };
 
-  // Drag & Drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -251,6 +266,7 @@ const App = () => {
   // Download image
   const downloadImage = () => {
     if (!resizedImage) return;
+
     const link = document.createElement('a');
     link.href = resizedImage;
     link.download = `resized-${Date.now()}.${format}`;
@@ -260,6 +276,7 @@ const App = () => {
   // Reset settings
   const resetSettings = () => {
     if (!image) return;
+
     const img = new Image();
     img.src = image;
     img.onload = () => {
@@ -269,6 +286,18 @@ const App = () => {
       setFormat('png');
       setQuality(1);
       setResizedImage(null);
+    };
+  };
+
+  // Auto-size handler
+  const setToOriginalSize = () => {
+    if (!image) return;
+
+    const img = new Image();
+    img.src = image;
+    img.onload = () => {
+      setWidth(img.width);
+      setHeight(img.height);
     };
   };
 
@@ -293,8 +322,8 @@ const App = () => {
       const img = new Image();
       img.src = image;
       img.onload = () => {
-        const ratio = img.height / img.width;
-        setHeight(Math.round(width * ratio));
+        const ratio = img.width / img.height;
+        setWidth(Math.round(height * ratio));
       };
     }
   };
@@ -306,15 +335,6 @@ const App = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className={`w-full max-w-md p-6 rounded-lg shadow-xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <h2 className="text-2xl font-bold mb-4">{authMode === 'login' ? t.login : t.signup}</h2>
-            {authMode === 'signup' && (
-              <input
-                type="email"
-                placeholder={t.email}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
-              />
-            )}
             <input
               type="email"
               placeholder={t.email}
@@ -361,10 +381,11 @@ const App = () => {
       )}
 
       <header className="p-4 md:p-6 flex justify-between items-center shadow-md bg-opacity-80 backdrop-blur-md backdrop-saturate-150 border-b dark:border-gray-700">
-        <h1 className="text-xl md:text-3xl font-bold">Professional Image Resizer</h1>
+        <h1 className="text-xl md:text-3xl font-bold">{t.title}</h1>
         <div className="flex gap-3 md:gap-4">
+          {/* Language Switcher */}
           <button
-            onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+            onClick={toggleLanguage}
             className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
               darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
             }`}
@@ -376,6 +397,8 @@ const App = () => {
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
             </svg>
           </button>
+
+          {/* Dark Mode Toggle */}
           <button
             onClick={toggleDarkMode}
             className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
@@ -439,27 +462,18 @@ const App = () => {
             </div>
 
             <div className="flex items-center space-x-4 mb-6">
-              {profilePic ? (
-                <img src={profilePic} alt="Profile" className="w-16 h-16 rounded-full object-cover border dark:border-gray-600" />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
-                  {currentUser?.email.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
+                {currentUser?.email.charAt(0).toUpperCase()}
+              </div>
               <div>
                 <h2 className="text-xl font-semibold">{currentUser?.email}</h2>
-                <label className="mt-2 inline-block cursor-pointer text-sm underline">
-                  {t.uploadProfile}
-                  <input type="file" accept="image/*" onChange={handleProfilePictureUpload} className="hidden" disabled={uploading} />
-                </label>
               </div>
             </div>
 
-            {/* Image Resizer Section */}
             <section className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
               {/* Upload Section */}
-              <div className={`p-6 rounded-lg shadow-lg ${darkMode ? 'bg-gray-800 hover:shadow-blue-500/20' : 'bg-white hover:shadow-blue-300/20'}`}>
-                <h2 className="text-xl font-semibold mb-4">Upload Image</h2>
+              <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-blue-500/20' : 'bg-white hover:shadow-blue-300/20'}`}>
+                <h2 className="text-xl font-semibold mb-4">{t.upload}</h2>
                 <label
                   htmlFor="image-upload"
                   onDragOver={handleDragOver}
@@ -475,31 +489,32 @@ const App = () => {
                 >
                   <div className="mb-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 0 0 1-2-2v-4" />
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                       <polyline points="17 8 12 3 7 8" />
                       <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
                   </div>
-                  <span className="block text-sm md:text-base">Drag & Drop or Click to Upload</span>
+                  <span className="block text-sm md:text-base">{t.dragDrop}</span>
                   <input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
                 </label>
 
                 {image && (
                   <div className="mt-4 space-y-2">
-                    <p><strong>File Name:</strong> {fileName}</p>
-                    <p><strong>File Size:</strong> {Math.round(fileSize)} KB</p>
+                    <p><strong>{t.fileName}</strong> {fileName}</p>
+                    <p><strong>{t.fileSize}</strong> {Math.round(fileSize)} KB</p>
                   </div>
                 )}
 
-                {!image && <p className="mt-4 text-center">No image uploaded yet.</p>}
+                {!image && <p className="mt-4 text-center">{t.noImage}</p>}
 
                 {image && (
                   <div className="mt-6 space-y-4">
                     <div className="flex items-center justify-between">
-                      <label>Lock Aspect Ratio</label>
+                      <label>{t.lockRatio}</label>
                       <button
                         onClick={() => setAspectRatio(!aspectRatio)}
                         className={`p-1 rounded focus:outline-none ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`}
+                        aria-label="Toggle aspect ratio"
                       >
                         {aspectRatio ? (
                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -517,23 +532,23 @@ const App = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label>Width</label>
+                        <label className="block mb-2">{t.width}</label>
                         <input
                           type="number"
                           value={width}
                           onChange={(e) => setWidth(parseInt(e.target.value))}
                           min="1"
-                          className={`w-full px-3 py-2 border rounded-md focus:ring ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300 text-gray-800'}`}
+                          className={`w-full px-3 py-2 border rounded-md focus:ring focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${darkMode ? 'focus:ring-blue-400' : 'focus:ring-blue-200'}`}
                         />
                       </div>
                       <div>
-                        <label>Height</label>
+                        <label className="block mb-2">{t.height}</label>
                         <input
                           type="number"
                           value={height}
                           onChange={(e) => setHeight(parseInt(e.target.value))}
                           min="1"
-                          className={`w-full px-3 py-2 border rounded-md focus:ring ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300 text-gray-800'}`}
+                          className={`w-full px-3 py-2 border rounded-md focus:ring focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${darkMode ? 'focus:ring-blue-400' : 'focus:ring-blue-200'}`}
                         />
                       </div>
                     </div>
@@ -543,28 +558,28 @@ const App = () => {
                         onClick={setToOriginalSize}
                         className={`py-1 px-2 rounded-md text-xs hover:opacity-90 ${darkMode ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-indigo-500 hover:bg-indigo-600 text-white'}`}
                       >
-                        Original Size
+                        {t.originalSize}
                       </button>
                       <button
                         onClick={zoomIn}
                         className={`py-1 px-2 rounded-md text-xs hover:opacity-90 ${darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
                       >
-                        Zoom In
+                        {t.zoomIn}
                       </button>
                       <button
                         onClick={zoomOut}
                         className={`py-1 px-2 rounded-md text-xs hover:opacity-90 ${darkMode ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-purple-500 hover:bg-purple-600 text-white'}`}
                       >
-                        Zoom Out
+                        {t.zoomOut}
                       </button>
                     </div>
 
                     <div>
-                      <label>Format</label>
+                      <label className="block mb-2">{t.format}</label>
                       <select
                         value={format}
                         onChange={(e) => setFormat(e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-md focus:ring ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300 text-gray-800'}`}
+                        className={`w-full px-3 py-2 border rounded-md focus:ring focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${darkMode ? 'focus:ring-blue-400' : 'focus:ring-blue-200'}`}
                       >
                         <option value="png">PNG</option>
                         <option value="jpg">JPG</option>
@@ -573,7 +588,7 @@ const App = () => {
 
                     {format === 'jpg' && (
                       <div>
-                        <label>Quality</label>
+                        <label className="block mb-2">{t.quality}</label>
                         <input
                           type="range"
                           min="0.1"
@@ -595,14 +610,14 @@ const App = () => {
                         onClick={resetSettings}
                         className={`py-2 px-4 rounded-md font-medium hover:opacity-90 ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'}`}
                       >
-                        Reset
+                        {t.reset}
                       </button>
                       <button
                         onClick={resizeImage}
                         disabled={loading}
                         className={`flex-1 py-2 px-4 rounded-md font-medium hover:opacity-90 ${darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
                       >
-                        {loading ? 'Resizing...' : 'Resize'}
+                        {loading ? t.resizing : t.resize}
                       </button>
                     </div>
                   </div>
@@ -610,21 +625,21 @@ const App = () => {
               </div>
 
               {/* Preview & Download Section */}
-              <div className={`p-6 rounded-lg shadow-lg ${darkMode ? 'bg-gray-800 hover:shadow-green-500/20' : 'bg-white hover:shadow-green-300/20'}`}>
-                <h2 className="text-xl font-semibold mb-4">Download Resized Image</h2>
+              <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-green-500/20' : 'bg-white hover:shadow-green-300/20'}`}>
+                <h2 className="text-xl font-semibold mb-4">{t.download}</h2>
                 {resizedImage ? (
                   <>
                     <img src={resizedImage} alt="Resized" className="w-full max-h-60 object-contain rounded-md border dark:border-gray-600" />
                     <button
                       onClick={downloadImage}
-                      className={`mt-6 w-full py-2 px-4 rounded-md font-medium hover:opacity-90 ${darkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}`}
+                      className={`mt-6 w-full py-2 px-4 rounded-md font-medium transition-all hover:opacity-90 ${darkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}`}
                     >
-                      Download
+                      {t.download}
                     </button>
                   </>
                 ) : (
                   <p className="text-center mt-10">
-                    {!image ? 'No image uploaded yet.' : loading ? 'Resizing...' : 'Select size and click resize.'}
+                    {!image ? t.noImage : loading ? t.resizing : "Select size and click resize."}
                   </p>
                 )}
               </div>
@@ -634,7 +649,7 @@ const App = () => {
       )}
 
       <footer className={`p-4 text-center mt-10 ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
-        <p>© 2025 M7D | Professional Image Resizer</p>
+        <p>© 2025 M7D | {t.title} | Designed with ❤️ by M7D</p>
       </footer>
     </div>
   );
