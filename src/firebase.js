@@ -4,11 +4,10 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged,
-  sendEmailVerification
+  onAuthStateChanged
 } from 'firebase/auth';
 
-// ⚠️ استبدل هذه البيانات بمعلومات مشروعك
+// 🔑 استبدل هذه البيانات بمعلومات مشروعك من Firebase Console
 const firebaseConfig = {
   apiKey: "AIzaSyCn3stWO7QelOmGPyqQ-1jVXy9Y0y5uPgA",
   authDomain: "image-resizer-m7d.firebaseapp.com",
@@ -18,6 +17,7 @@ const firebaseConfig = {
   appId: "1:700892046577:web:5c820df7f4a2ce26b5bfa2"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
@@ -25,7 +25,6 @@ const auth = getAuth(app);
 const registerUser = async (email, password) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    await sendEmailVerification(userCredential.user);
     return userCredential.user;
   } catch (error) {
     throw error;
@@ -57,6 +56,5 @@ export {
   registerUser,
   loginUser,
   logoutUser,
-  onAuthStateChanged,
-  sendEmailVerification
+  onAuthStateChanged
 };
