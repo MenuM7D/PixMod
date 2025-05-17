@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 
 const App = () => {
-  // Auth state
+  // Auth states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('login'); // login or signup
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
+  const [profilePic, setProfilePic] = useState(null);
 
   // Image Resizer State
   const [darkMode, setDarkMode] = useState(false);
@@ -21,9 +26,6 @@ const App = () => {
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-
-  // Profile Picture
-  const [profilePic, setProfilePic] = useState(null);
 
   // Toggle dark mode
   const toggleDarkMode = () => {
@@ -53,12 +55,31 @@ const App = () => {
       quality: 'Quality',
       reset: 'Reset',
       originalSize: 'Original Size',
-      loginTitle: 'Login',
+      fileName: 'File Name:',
+      fileSize: 'File Size:',
+      optimize: 'Optimize for Web',
+      autoSize: 'Auto Size',
+      preview: 'Live Preview',
+      zoomIn: 'Zoom In',
+      zoomOut: 'Zoom Out',
+      login: 'Login',
+      signup: 'Sign Up',
       username: 'Username',
+      email: 'Email',
       password: 'Password',
-      loginButton: 'Login',
+      confirmPassword: 'Confirm Password',
+      submitLogin: 'Login',
+      submitSignup: 'Create Account',
+      alreadyAccount: 'Already have an account?',
+      needAccount: "Don't have an account?",
+      loginNow: 'Login Now',
       logout: 'Logout',
+      profile: 'Profile',
       uploadProfile: 'Upload Profile Picture',
+      invalidPass: 'Password must contain letters and numbers',
+      passNotMatch: 'Passwords do not match',
+      userExists: 'Username already exists',
+      requiredFields: 'All fields are required'
     },
     ar: {
       title: 'مُصغّر الصور الاحترافي',
@@ -76,13 +97,32 @@ const App = () => {
       quality: 'الجودة',
       reset: 'إعادة ضبط',
       originalSize: 'الحجم الأصلي',
-      loginTitle: 'تسجيل الدخول',
+      fileName: 'اسم الملف:',
+      fileSize: 'حجم الملف:',
+      optimize: 'تحسين للويب',
+      autoSize: 'حجم تلقائي',
+      preview: 'معاينة مباشرة',
+      zoomIn: 'تكبير',
+      zoomOut: 'تصغير',
+      login: 'تسجيل الدخول',
+      signup: 'إنشاء حساب',
       username: 'اسم المستخدم',
+      email: 'البريد الإلكتروني',
       password: 'كلمة المرور',
-      loginButton: 'دخول',
+      confirmPassword: 'تأكيد كلمة المرور',
+      submitLogin: 'دخول',
+      submitSignup: 'إنشاء الحساب',
+      alreadyAccount: 'لديك حساب بالفعل؟',
+      needAccount: 'لا تملك حسابًا؟',
+      loginNow: 'سجل دخولك الآن',
       logout: 'تسجيل الخروج',
+      profile: 'الملف الشخصي',
       uploadProfile: 'رفع صورة الملف الشخصي',
-    },
+      invalidPass: 'يجب أن تحتوي كلمة المرور على حروف وأرقام',
+      passNotMatch: 'كلمتا المرور غير متطابقتين',
+      userExists: 'اسم المستخدم موجود مسبقًا',
+      requiredFields: 'جميع الحقول مطلوبة'
+    }
   };
 
   const t = translations[language];
@@ -96,30 +136,72 @@ const App = () => {
       setIsLoggedIn(true);
       if (user.profilePic) setProfilePic(user.profilePic);
     }
+
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, []);
 
-  // Handle Login
-  const handleLogin = () => {
-    if (!username || !password) return alert(t.username + ' و ' + t.password + ' مطلوبان');
-
-    let users = JSON.parse(localStorage.getItem('users') || '[]');
-    let user = users.find(u => u.username === username);
-
-    if (!user) {
-      // Register new user
-      user = { username, password, profilePic: null };
-      users.push(user);
-      localStorage.setItem('users', JSON.stringify(users));
-    } else if (user.password !== password) {
-      alert('كلمة المرور خاطئة!');
+  // Handle Sign Up
+  const handleSignUp = () => {
+    if (!username || !password || (authMode === 'signup' && !confirmPassword)) {
+      alert(t.requiredFields);
       return;
     }
 
-    setCurrentUser(user);
-    setIsLoggedIn(true);
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    setUsername('');
-    setPassword('');
+    if (authMode === 'signup' && password !== confirmPassword) {
+      alert(t.passNotMatch);
+      return;
+    }
+
+    if (password.length < 6 || !/(?=.*[a-zA-Z])(?=.*\d)/.test(password)) {
+      alert(t.invalidPass);
+      return;
+    }
+
+    let users = JSON.parse(localStorage.getItem('users') || '[]');
+
+    if (authMode === 'signup') {
+      const userExists = users.some(u => u.username === username);
+      if (userExists) {
+        alert(t.userExists);
+        return;
+      }
+
+      const newUser = { username, email, password, profilePic: null };
+      users.push(newUser);
+      localStorage.setItem('users', JSON.stringify(users));
+    }
+
+    const user = users.find(u => u.username === username && u.password === password);
+    if (user) {
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      setCurrentUser(user);
+      setIsLoggedIn(true);
+      setShowAuthModal(false);
+    }
+  };
+
+  // Handle Login
+  const handleLogin = () => {
+    if (!username || !password) {
+      alert(t.requiredFields);
+      return;
+    }
+
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const user = users.find(u => u.username === username && u.password === password);
+
+    if (user) {
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      setCurrentUser(user);
+      setIsLoggedIn(true);
+      setShowAuthModal(false);
+    } else {
+      alert('بيانات الدخول خاطئة!');
+    }
   };
 
   // Handle Logout
@@ -140,15 +222,11 @@ const App = () => {
       const updatedUser = { ...currentUser, profilePic: e.target.result };
       setCurrentUser(updatedUser);
       setProfilePic(e.target.result);
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
 
-      // Update in local database
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const index = users.findIndex(u => u.username === currentUser.username);
-      if (index > -1) {
-        users[index].profilePic = e.target.result;
-        localStorage.setItem('users', JSON.stringify(users));
-      }
+      let users = JSON.parse(localStorage.getItem('users') || '[]');
+      users = users.map(u => u.username === currentUser.username ? updatedUser : u);
+      localStorage.setItem('users', JSON.stringify(users));
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
     };
     reader.readAsDataURL(file);
   };
@@ -207,12 +285,10 @@ const App = () => {
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-
       canvas.width = width;
       canvas.height = height;
 
       setLoading(true);
-
       setTimeout(() => {
         ctx.drawImage(img, 0, 0, width, height);
         let resizedDataURL;
@@ -289,8 +365,95 @@ const App = () => {
     }
   };
 
+  // Update height based on aspect ratio
+  useEffect(() => {
+    if (aspectRatio && image) {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => {
+        const ratio = img.height / img.width;
+        setHeight(Math.round(width * ratio));
+      };
+    }
+  }, [width, aspectRatio, image]);
+
+  // Update width based on aspect ratio
+  useEffect(() => {
+    if (aspectRatio && image) {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => {
+        const ratio = img.width / img.height;
+        setWidth(Math.round(height * ratio));
+      };
+    }
+  }, [height, aspectRatio, image]);
+
+  // UI Components
+
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`w-full max-w-md p-6 rounded-lg shadow-xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <h2 className="text-2xl font-bold mb-4">{authMode === 'login' ? t.login : t.signup}</h2>
+            {authMode === 'signup' && (
+              <input
+                type="text"
+                placeholder={t.username}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
+              />
+            )}
+            {authMode === 'signup' && (
+              <input
+                type="email"
+                placeholder={t.email}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
+              />
+            )}
+            <input
+              type="password"
+              placeholder={t.password}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
+            />
+            {authMode === 'signup' && (
+              <input
+                type="password"
+                placeholder={t.confirmPassword}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
+              />
+            )}
+            <button
+              onClick={authMode === 'login' ? handleLogin : handleSignUp}
+              className={`w-full py-2 rounded-md font-medium mt-2 ${
+                darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
+            >
+              {authMode === 'login' ? t.submitLogin : t.submitSignup}
+            </button>
+
+            <p className="mt-4 text-center">
+              {authMode === 'login' ? t.needAccount : t.alreadyAccount}{' '}
+              <button
+                onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                className="text-blue-500 hover:underline"
+              >
+                {authMode === 'login' ? t.signup : t.loginNow}
+              </button>
+            </p>
+          </div>
+        </div>
+      )}
+
       <header className="p-4 md:p-6 flex justify-between items-center shadow-md bg-opacity-80 backdrop-blur-md backdrop-saturate-150 border-b dark:border-gray-700">
         <h1 className="text-xl md:text-3xl font-bold">{t.title}</h1>
         <div className="flex gap-3 md:gap-4">
@@ -331,35 +494,36 @@ const App = () => {
         </div>
       </header>
 
-      <main className="container mx-auto p-4 md:p-6">
-        {!isLoggedIn ? (
-          <div className={`max-w-md mx-auto mt-10 p-6 rounded-lg shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-            <h2 className="text-2xl font-semibold mb-4 text-center">{t.loginTitle}</h2>
-            <input
-              type="text"
-              placeholder={t.username}
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
-            />
-            <input
-              type="password"
-              placeholder={t.password}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={`w-full px-4 py-2 mb-4 border rounded-md focus:outline-none ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}
-            />
-            <button
-              onClick={handleLogin}
-              className={`w-full py-2 rounded-md font-medium transition-all hover:opacity-90 ${
-                darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
-            >
-              {t.loginButton}
-            </button>
-          </div>
-        ) : (
-          <>
+      {!isLoggedIn ? (
+        <main className="container mx-auto p-4 md:p-6">
+          <section className="max-w-md mx-auto mt-10 p-6 rounded-lg shadow-lg text-center space-y-4">
+            <h2 className="text-2xl font-semibold">تسجيل الدخول</h2>
+            <p>للاستخدام الكامل للموقع، يرجى تسجيل الدخول أو إنشاء حساب جديد.</p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  setAuthMode('login');
+                  setShowAuthModal(true);
+                }}
+                className="flex-1 py-2 px-4 rounded-md bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                {t.login}
+              </button>
+              <button
+                onClick={() => {
+                  setAuthMode('signup');
+                  setShowAuthModal(true);
+                }}
+                className="flex-1 py-2 px-4 rounded-md bg-green-500 hover:bg-green-600 text-white"
+              >
+                {t.signup}
+              </button>
+            </div>
+          </section>
+        </main>
+      ) : (
+        <>
+          <main className="container mx-auto p-4 md:p-6">
             <div className="flex justify-end mb-4">
               <button
                 onClick={handleLogout}
@@ -388,6 +552,7 @@ const App = () => {
               </div>
             </div>
 
+            {/* Image Resizer Section */}
             <section className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
               {/* Upload Section */}
               <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-blue-500/20' : 'bg-white hover:shadow-blue-300/20'}`}>
@@ -400,7 +565,7 @@ const App = () => {
                   className={`relative block w-full p-6 border-2 border-dashed rounded-lg text-center cursor-pointer transition-all ${
                     isDragging
                       ? 'border-blue-500 bg-blue-500/10'
-                      : darkMode
+                      : darkMode 
                         ? 'border-gray-600 hover:border-blue-400 bg-gray-700/50 hover:bg-gray-700'
                         : 'border-gray-300 hover:border-blue-400 bg-gray-50 hover:bg-gray-100'
                   }`}
@@ -438,13 +603,13 @@ const App = () => {
                       >
                         {aspectRatio ? (
                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                           </svg>
                         ) : (
                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 9.9-2"></path>
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 9.9-2" />
                           </svg>
                         )}
                       </button>
@@ -481,9 +646,7 @@ const App = () => {
                       <button
                         onClick={setToOriginalSize}
                         className={`py-1 px-2 rounded-md text-xs transition-all hover:opacity-90 ${
-                          darkMode
-                            ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                            : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                          darkMode ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-indigo-500 hover:bg-indigo-600 text-white'
                         }`}
                       >
                         {t.originalSize}
@@ -491,9 +654,7 @@ const App = () => {
                       <button
                         onClick={zoomIn}
                         className={`py-1 px-2 rounded-md text-xs transition-all hover:opacity-90 ${
-                          darkMode
-                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                            : 'bg-blue-500 hover:bg-blue-600 text-white'
+                          darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
                         }`}
                       >
                         {t.zoomIn}
@@ -501,9 +662,7 @@ const App = () => {
                       <button
                         onClick={zoomOut}
                         className={`py-1 px-2 rounded-md text-xs transition-all hover:opacity-90 ${
-                          darkMode
-                            ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                            : 'bg-purple-500 hover:bg-purple-600 text-white'
+                          darkMode ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-purple-500 hover:bg-purple-600 text-white'
                         }`}
                       >
                         {t.zoomOut}
@@ -556,9 +715,7 @@ const App = () => {
                         onClick={resizeImage}
                         disabled={loading}
                         className={`flex-1 py-2 px-4 rounded-md font-medium transition-all hover:opacity-90 ${
-                          darkMode
-                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                            : 'bg-blue-500 hover:bg-blue-600 text-white'
+                          darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
                         }`}
                       >
                         {loading ? t.resizing : t.resize}
@@ -577,9 +734,7 @@ const App = () => {
                     <button
                       onClick={downloadImage}
                       className={`mt-6 w-full py-2 px-4 rounded-md font-medium transition-all hover:opacity-90 ${
-                        darkMode
-                          ? 'bg-green-600 hover:bg-green-700 text-white'
-                          : 'bg-green-500 hover:bg-green-600 text-white'
+                        darkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
                       }`}
                     >
                       {t.download}
@@ -590,9 +745,9 @@ const App = () => {
                 )}
               </div>
             </section>
-          </>
-        )}
-      </main>
+          </main>
+        </>
+      )}
 
       <footer className={`p-4 text-center mt-10 ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
         <p>© 2025 M7D | {t.title}</p>
