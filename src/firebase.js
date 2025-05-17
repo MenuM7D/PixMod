@@ -5,11 +5,11 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  sendPasswordResetEmail
+  sendEmailVerification,
+  sendPasswordResetEmail    // ✅ تم إضافتها
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
-// ⚠️ استبدله بمعلومات مشروعك
+// ⚠️ استبدل هذه البيانات بمعلومات مشروعك من Firebase Console
 const firebaseConfig = {
   apiKey: "AIzaSyCn3stWO7QelOmGPyqQ-1jVXy9Y0y5uPgA",
   authDomain: "image-resizer-m7d.firebaseapp.com",
@@ -19,35 +19,26 @@ const firebaseConfig = {
   appId: "1:700892046577:web:5c820df7f4a2ce26b5bfa2"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 
-// تسجيل مستخدم جديد وإرسال رمز تفعيل
+// 📦 تسجيل مستخدم جديد + إرسال رسالة التفعيل
 const registerUser = async (email, password) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // إنشاء رمز تفعيل عشوائي
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // ✉️ إرسال رسالة التفعيل
+    await sendEmailVerification(user);
 
-    // حفظ الرمز في Firestore
-    await setDoc(doc(db, 'verificationCodes', user.uid), {
-      email: user.email,
-      code: verificationCode,
-      createdAt: new Date(),
-    });
-
-    // ❗ هنا: يجب أن تُرسل هذا الرمز عبر البريد (يمكنك استخدام EmailJS أو Email API)
-    alert(`رمز التفعيل هو: ${verificationCode}`);
     return user;
   } catch (error) {
     throw error;
   }
 };
 
-// تسجيل دخول المستخدم
+// 🔐 تسجيل دخول المستخدم
 const loginUser = async (email, password) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -57,7 +48,7 @@ const loginUser = async (email, password) => {
   }
 };
 
-// تسجيل خروج المستخدم
+// 🚪 تسجيل الخروج
 const logoutUser = async () => {
   try {
     await signOut(auth);
@@ -73,5 +64,6 @@ export {
   loginUser,
   logoutUser,
   onAuthStateChanged,
-  sendPasswordResetEmail
+  sendEmailVerification,
+  sendPasswordResetEmail    // ✅ تم التصدير بنجاح
 };
