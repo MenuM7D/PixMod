@@ -415,7 +415,7 @@ const App = () => {
               </svg>
             ) : (
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
               </svg>
             )}
           </button>
@@ -505,7 +505,7 @@ const App = () => {
 
       {/* Main Content */}
       <main className="container mx-auto p-4 md:p-6">
-        <section className="grid grid-cols-1 gap-6">
+        <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {/* Upload Section */}
           <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-blue-500/20' : 'bg-white hover:shadow-blue-300/20'}`}>
             <h2 className="text-xl font-semibold mb-4">{t.upload}</h2>
@@ -524,7 +524,7 @@ const App = () => {
             >
               <div className="mb-3 mx-auto">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 0 0 1-2-2v-4" />
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
@@ -555,13 +555,13 @@ const App = () => {
                   >
                     {aspectRatio ? (
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                       </svg>
                     ) : (
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 9.9-2" />
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 9.9-2"></path>
                       </svg>
                     )}
                   </button>
@@ -628,7 +628,7 @@ const App = () => {
                     onChange={(e) => setFormat(e.target.value)}
                     className={`w-full px-3 py-2 border rounded-md focus:ring focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
                       darkMode ? 'focus:ring-blue-400' : 'focus:ring-blue-200'
-                    }`}
+                      }`}
                   >
                     <option value="png">PNG</option>
                     <option value="jpg">JPG</option>
