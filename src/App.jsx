@@ -11,17 +11,17 @@ const App = () => {
   const [aspectRatio, setAspectRatio] = useState(true);
   const [format, setFormat] = useState('png');
   const [quality, setQuality] = useState(1);
-  const [loadingResize, setLoadingResize] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
-  // For Catbox Upload
-  const [mediaFile, setMediaFile] = useState(null);
-  const [uploadStatus, setUploadStatus] = useState('');
-  const [uploadedLink, setUploadedLink] = useState('');
-  const [uploadLoading, setUploadLoading] = useState(false);
+  // Catbox Section
+  const [catboxFile, setCatboxFile] = useState(null);
+  const [catboxLink, setCatboxLink] = useState('');
+  const [catboxUploading, setCatboxUploading] = useState(false);
   const [isDraggingMedia, setIsDraggingMedia] = useState(false);
+  const [catboxError, setCatboxError] = useState('');
 
   // Toggle dark mode
   const toggleDarkMode = () => {
@@ -39,6 +39,7 @@ const App = () => {
     if (file) {
       setFileName(file.name);
       setFileSize(file.size / 1024); // in KB
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new Image();
@@ -90,7 +91,7 @@ const App = () => {
       canvas.width = width;
       canvas.height = height;
 
-      setLoadingResize(true);
+      setLoading(true);
 
       setTimeout(() => {
         ctx.drawImage(img, 0, 0, width, height);
@@ -101,7 +102,7 @@ const App = () => {
           resizedDataURL = canvas.toDataURL('image/png');
         }
         setResizedImage(resizedDataURL);
-        setLoadingResize(false);
+        setLoading(false);
       }, 600);
     };
   };
@@ -109,6 +110,7 @@ const App = () => {
   // Download image
   const downloadImage = () => {
     if (!resizedImage) return;
+
     const link = document.createElement('a');
     link.href = resizedImage;
     link.download = `resized-${Date.now()}.${format}`;
@@ -268,9 +270,9 @@ const App = () => {
   const handleMediaUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setMediaFile(file);
-      setUploadStatus('');
-      setUploadedLink('');
+      setCatboxFile(file);
+      setCatboxLink('');
+      setCatboxError('');
     }
   };
 
@@ -289,52 +291,62 @@ const App = () => {
     setIsDraggingMedia(false);
     const file = e.dataTransfer.files[0];
     if (file) {
-      const input = document.getElementById('media-upload');
+      const input = document.getElementById('catbox-upload');
       input.files = e.dataTransfer.files;
       const event = new Event('change', { bubbles: true });
       input.dispatchEvent(event);
+      setCatboxFile(file);
     }
   };
 
   const uploadToCatbox = async () => {
-    if (!mediaFile) return;
+    if (!catboxFile) return;
+
     const formData = new FormData();
     formData.append('reqtype', 'fileupload');
-    formData.append('userhash', ''); // يمكنك وضع userhash إذا كان لديك حساب
-    formData.append('fileToUpload', mediaFile);
+    formData.append('userhash', ''); // يمكنك تركه فارغًا إن لم يكن لديك حساب
+    formData.append('fileToUpload', catboxFile);
 
-    setUploadLoading(true);
+    setCatboxUploading(true);
+    setCatboxError('');
+
     try {
       const response = await axios.post('https://catbox.moe/user/api.php ', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
-      setUploadedLink(response.data);
-      setUploadStatus('success');
+
+      if (response.status === 200 && response.data.startsWith('http')) {
+        setCatboxLink(response.data);
+        setCatboxUploading(false);
+      } else {
+        setCatboxError(t.uploadFailed);
+        setCatboxUploading(false);
+      }
+
     } catch (error) {
       console.error('Upload failed:', error);
-      setUploadStatus('failed');
-    } finally {
-      setUploadLoading(false);
+      setCatboxError(t.uploadFailed);
+      setCatboxUploading(false);
     }
   };
 
   const copyLink = () => {
-    navigator.clipboard.writeText(uploadedLink).then(() => {
+    navigator.clipboard.writeText(catboxLink).then(() => {
       alert(t.uploadSuccess);
     });
   };
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
-      <header className="p-4 md:p-6 flex justify-between items-center shadow-md bg-opacity-80 backdrop-blur-md backdrop-saturate-150 border-b dark:border-gray-700">
+      <header className="p-4 md:p-6 flex justify-between items-center shadow-md bg-opacity-80 backdrop-blur-md border-b dark:border-gray-700">
         <h1 className="text-xl md:text-3xl font-bold">{t.title}</h1>
         <div className="flex gap-3 md:gap-4">
           {/* Language Switcher */}
           <button
             onClick={toggleLanguage}
-            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
+            className={`p-2 rounded-full focus:outline-none hover:scale-110 transition-transform ${
               darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
             }`}
             aria-label="Toggle language"
@@ -349,7 +361,7 @@ const App = () => {
           {/* Dark Mode Toggle */}
           <button
             onClick={toggleDarkMode}
-            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
+            className={`p-2 rounded-full focus:outline-none hover:scale-110 transition-transform ${
               darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
             }`}
             aria-label="Toggle dark mode"
@@ -369,6 +381,7 @@ const App = () => {
       </header>
 
       <main className="container mx-auto p-4 md:p-6 space-y-10">
+
         {/* Resize Section */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {/* Upload Section */}
@@ -538,14 +551,16 @@ const App = () => {
                   </button>
                   <button
                     onClick={resizeImage}
-                    disabled={loadingResize}
+                    disabled={loading}
                     className={`flex-1 py-2 px-4 rounded-md font-medium transition-all hover:opacity-90 ${
-                      darkMode
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                        : 'bg-blue-500 hover:bg-blue-600 text-white'
+                      loading
+                        ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                        : darkMode
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                          : 'bg-blue-500 hover:bg-blue-600 text-white'
                     }`}
                   >
-                    {loadingResize ? t.resizing : t.resize}
+                    {loading ? t.resizing : t.resize}
                   </button>
                 </div>
               </div>
@@ -570,17 +585,17 @@ const App = () => {
                 </button>
               </>
             ) : (
-              <p className="text-center mt-10">{!image ? t.noImage : loadingResize ? t.resizing : "Select size and click resize."}</p>
+              <p className="text-center mt-10">{!image ? t.noImage : t.resizing}</p>
             )}
           </div>
         </section>
 
-        {/* New Media Upload Section */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+        {/* New: Catbox Upload Section */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mt-10">
           <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-blue-500/20' : 'bg-white hover:shadow-blue-300/20'}`}>
             <h2 className="text-xl font-semibold mb-4">{t.mediaTitle}</h2>
             <label
-              htmlFor="media-upload"
+              htmlFor="catbox-upload"
               onDragOver={handleMediaDragOver}
               onDragLeave={handleMediaDragLeave}
               onDrop={handleMediaDrop}
@@ -600,53 +615,53 @@ const App = () => {
                 </svg>
               </div>
               <span className="block text-sm md:text-base">{t.mediaUpload}</span>
-              <input id="media-upload" type="file" accept="*" onChange={handleMediaUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+              <input id="catbox-upload" type="file" accept="*" onChange={handleMediaUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
             </label>
 
-            {mediaFile && (
+            {catboxFile && (
               <div className="mt-4 space-y-2">
-                <p><strong>{t.mediaFile}</strong> {mediaFile.name}</p>
-                <p><strong>Size:</strong> {(mediaFile.size / 1024).toFixed(2)} KB</p>
+                <p><strong>{t.mediaFile}</strong> {catboxFile.name}</p>
+                <p><strong>Size:</strong> {(catboxFile.size / 1024).toFixed(2)} KB</p>
               </div>
             )}
 
             <button
               onClick={uploadToCatbox}
-              disabled={!mediaFile || uploadLoading}
+              disabled={!catboxFile || catboxUploading}
               className={`mt-4 w-full py-2 px-4 rounded-md font-medium transition-all hover:opacity-90 ${
-                !mediaFile || uploadLoading
+                !catboxFile || catboxUploading
                   ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
                   : darkMode
                     ? 'bg-orange-600 hover:bg-orange-700 text-white'
                     : 'bg-orange-500 hover:bg-orange-600 text-white'
               }`}
             >
-              {uploadLoading ? 'Uploading...' : t.uploadButton}
+              {catboxUploading ? 'جاري الرفع...' : t.uploadButton}
             </button>
 
-            {uploadStatus === 'success' && (
+            {catboxLink && (
               <div className="mt-4 text-center">
                 <p className="text-green-500">{t.uploadSuccess}</p>
                 <button
                   onClick={copyLink}
-                  className={`mt-2 py-1 px-3 rounded-md ${
+                  className={`mt-2 px-4 py-2 rounded-md break-all ${
                     darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
                   }`}
                 >
-                  {uploadedLink}
+                  {catboxLink}
                 </button>
               </div>
             )}
 
-            {uploadStatus === 'failed' && (
-              <p className="mt-4 text-red-500 text-center">{t.uploadFailed}</p>
+            {catboxError && (
+              <p className="mt-4 text-red-500 text-center">{catboxError}</p>
             )}
           </div>
 
           {/* Uploaded Link Display */}
           <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <h2 className="text-xl font-semibold mb-4">🔗 {t.downloadLink}</h2>
-            {uploadedLink ? (
+            {catboxLink ? (
               <div className="mt-6 text-center">
                 <button
                   onClick={copyLink}
@@ -656,7 +671,7 @@ const App = () => {
                 >
                   {t.downloadLink}
                 </button>
-                <p className="mt-4 break-words">{uploadedLink}</p>
+                <p className="mt-4 break-words">{catboxLink}</p>
               </div>
             ) : (
               <p className="text-center mt-10">{t.noMedia}</p>
