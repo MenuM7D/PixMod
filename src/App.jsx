@@ -1,17 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {
-  auth,
-  registerUser,
-  loginUser,
-  logoutUser,
-  onAuthStateChanged
-} from './firebase';
 
 const App = () => {
   // Auth states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [authMode, setAuthMode] = useState('login');
+  const [authMode, setAuthMode] = useState('login'); // login or signup
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -37,7 +30,7 @@ const App = () => {
   // Translations
   const translations = {
     en: {
-      title: 'Professional Image Resizer',
+      title: 'Professional Image Resifier',
       upload: 'Upload Image',
       width: 'Width',
       height: 'Height',
@@ -54,13 +47,6 @@ const App = () => {
       originalSize: 'Original Size',
       fileName: 'File Name:',
       fileSize: 'File Size:',
-      login: 'Login',
-      signup: 'Sign Up',
-      email: 'Email',
-      password: 'Password',
-      confirmPassword: 'Confirm Password',
-      submitLogin: 'Login',
-      submitSignup: 'Create Account',
       profile: 'Profile',
       changeName: 'Change Username',
       editProfile: 'Edit Profile',
@@ -89,13 +75,6 @@ const App = () => {
       originalSize: 'الحجم الأصلي',
       fileName: 'اسم الملف:',
       fileSize: 'حجم الملف:',
-      login: 'تسجيل الدخول',
-      signup: 'إنشاء حساب',
-      email: 'البريد الإلكتروني',
-      password: 'كلمة المرور',
-      confirmPassword: 'تأكيد كلمة المرور',
-      submitLogin: 'دخول',
-      submitSignup: 'إنشاء الحساب',
       profile: 'الملف الشخصي',
       changeName: 'تغيير الاسم',
       editProfile: 'تعديل الملف الشخصي',
@@ -110,48 +89,20 @@ const App = () => {
 
   const t = translations[language];
 
-  // Check if user is logged in
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setIsLoggedIn(true);
-        setUserName(user.email.split('@')[0]);
-      } else {
-        setIsLoggedIn(false);
-        setUserName(null);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
-
-  // Toggle language
-  const toggleLanguage = () => {
-    setLanguage(language === 'en' ? 'ar' : 'en');
-  };
-
-  // Handle Login
-  const handleLogin = async () => {
+  // Handle Login Modal
+  const handleLogin = () => {
     if (!email || !password) {
       alert(t.requiredFields);
       return;
     }
 
-    try {
-      await loginUser(email, password);
-      setUserName(email.split('@')[0]);
-      setShowLoginModal(false);
-    } catch (error) {
-      alert(error.message);
-    }
+    // Simulate login
+    setIsLoggedIn(true);
+    setUserName(email.split('@')[0]);
+    setShowLoginModal(false);
   };
 
-  // Handle Sign Up
-  const handleSignUp = async () => {
+  const handleSignUp = () => {
     if (!email || !password || !confirmPassword) {
       alert(t.requiredFields);
       return;
@@ -167,44 +118,42 @@ const App = () => {
       return;
     }
 
-    try {
-      await registerUser(email, password);
-      setUserName(email.split('@')[0]);
-      setShowLoginModal(false);
-    } catch (error) {
-      alert(error.message);
-    }
+    // Simulate sign up
+    setIsLoggedIn(true);
+    setUserName(email.split('@')[0]);
+    setShowLoginModal(false);
   };
 
-  // Handle Logout
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
+  const handleLogout = () => {
+    if (window.confirm('هل تريد تسجيل الخروج؟')) {
+      setIsLoggedIn(false);
       setUserName(null);
-    } catch (error) {
-      alert(error.message);
     }
-  };
-
-  // Show login modal when trying to edit profile
-  const openLoginModal = () => {
-    setAuthMode('login');
-    setShowLoginModal(true);
   };
 
   // Handle Edit Profile Attempt
   const handleEditProfile = () => {
     if (!isLoggedIn) {
       alert(t.loginToEdit);
-      openLoginModal();
+      setShowLoginModal(true);
       return;
     }
-    // هنا يمكنك فتح نافذة تعديل الملف الشخصي
+    // هنا يمكنك فتح نافذة تعديل بيانات المستخدم
     const newName = prompt('Enter new username:', userName);
     if (newName && newName.trim()) {
       setUserName(newName);
       alert('تم تحديث الاسم بنجاح!');
     }
+  };
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
+  // Toggle language
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'ar' : 'en');
   };
 
   // Handle image upload
@@ -277,7 +226,7 @@ const App = () => {
         }
         setResizedImage(resizedDataURL);
         setLoading(false);
-      }, 600); // Simulate processing time
+      }, 600);
     };
   };
 
@@ -290,30 +239,6 @@ const App = () => {
     link.download = `resized-${Date.now()}.${format}`;
     link.click();
   };
-
-  // Update height based on aspect ratio
-  useEffect(() => {
-    if (aspectRatio && image) {
-      const img = new Image();
-      img.src = image;
-      img.onload = () => {
-        const ratio = img.height / img.width;
-        setHeight(Math.round(width * ratio));
-      };
-    }
-  }, [width, aspectRatio, image]);
-
-  // Update width based on aspect ratio
-  useEffect(() => {
-    if (aspectRatio && image) {
-      const img = new Image();
-      img.src = image;
-      img.onload = () => {
-        const ratio = img.width / img.height;
-        setWidth(Math.round(height * ratio));
-      };
-    }
-  }, [height, aspectRatio, image]);
 
   // Reset settings
   const resetSettings = () => {
@@ -328,18 +253,6 @@ const App = () => {
       setFormat('png');
       setQuality(1);
       setResizedImage(null);
-    };
-  };
-
-  // Auto-size handler
-  const setToOriginalSize = () => {
-    if (!image) return;
-
-    const img = new Image();
-    img.src = image;
-    img.onload = () => {
-      setWidth(img.width);
-      setHeight(img.height);
     };
   };
 
@@ -370,20 +283,61 @@ const App = () => {
     }
   };
 
+  // Update height based on aspect ratio
+  useEffect(() => {
+    if (aspectRatio && image) {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => {
+        const ratio = img.height / img.width;
+        setHeight(Math.round(width * ratio));
+      };
+    }
+  }, [width, aspectRatio, image]);
+
+  // Update width based on aspect ratio
+  useEffect(() => {
+    if (aspectRatio && image) {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => {
+        const ratio = img.width / img.height;
+        setWidth(Math.round(height * ratio));
+      };
+    }
+  }, [height, aspectRatio, image]);
+
+  // Toggle dark mode class
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
       {/* Header */}
       <header className="p-4 md:p-6 flex justify-between items-center shadow-md bg-opacity-80 backdrop-blur-md backdrop-saturate-150 border-b dark:border-gray-700">
         <h1 className="text-xl md:text-3xl font-bold">{t.title}</h1>
-        <div className="flex gap-3 md:gap-4">
+        <div className="flex gap-3 md:gap-4 items-center">
           {/* Profile Button */}
           <button
             onClick={handleEditProfile}
-            className={`py-2 px-4 rounded-md font-medium ${
-              darkMode ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+            className={`py-2 px-4 rounded-lg flex items-center gap-2 ${
+              darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'
             }`}
           >
-            {t.editProfile}
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold">
+              {userName ? userName.charAt(0).toUpperCase() : '?'}
+            </div>
+            <div className="text-left">
+              <span className="block font-semibold">{userName || 'Guest'}</span>
+              {isLoggedIn && (
+                <span className="text-xs text-green-500">✓ Verified</span>
+              )}
+            </div>
           </button>
 
           {/* Language Switcher */}
@@ -416,29 +370,32 @@ const App = () => {
               </svg>
             ) : (
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                <path d="M21 12.79A9 9 0 1 11.21 3 7 7 0 0 0 21 12.79z" />
               </svg>
             )}
           </button>
 
-          {/* Login/Signup Button in header */}
-          {!isLoggedIn ? (
-            <button
-              onClick={() => setShowLoginModal(true)}
-              className={`py-2 px-4 rounded-md font-medium ${
-                darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
-            >
-              {t.login}
-            </button>
-          ) : (
+          {/* Logout Button */}
+          {isLoggedIn && (
             <button
               onClick={handleLogout}
               className={`py-2 px-4 rounded-md font-medium ${
                 darkMode ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-red-500 hover:bg-red-600 text-white'
               }`}
             >
-              {t.logout}
+              {t.logout || 'Logout'}
+            </button>
+          )}
+
+          {/* Login Button (when not logged in) */}
+          {!isLoggedIn && (
+            <button
+              onClick={() => setShowLoginModal(true)}
+              className={`py-2 px-4 rounded-md font-medium ${
+                darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
+            >
+              {t.login || 'Login'}
             </button>
           )}
         </div>
@@ -599,9 +556,7 @@ const App = () => {
                   <button
                     onClick={setToOriginalSize}
                     className={`py-1 px-2 rounded-md text-xs transition-all hover:opacity-90 ${
-                      darkMode
-                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                        : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                      darkMode ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-indigo-500 hover:bg-indigo-600 text-white'
                     }`}
                   >
                     {t.originalSize}
@@ -609,9 +564,7 @@ const App = () => {
                   <button
                     onClick={zoomIn}
                     className={`py-1 px-2 rounded-md text-xs transition-all hover:opacity-90 ${
-                      darkMode
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                        : 'bg-blue-500 hover:bg-blue-600 text-white'
+                      darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
                     }`}
                   >
                     {t.zoomIn}
@@ -619,9 +572,7 @@ const App = () => {
                   <button
                     onClick={zoomOut}
                     className={`py-1 px-2 rounded-md text-xs transition-all hover:opacity-90 ${
-                      darkMode
-                        ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                        : 'bg-purple-500 hover:bg-purple-600 text-white'
+                      darkMode ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-purple-500 hover:bg-purple-600 text-white'
                     }`}
                   >
                     {t.zoomOut}
@@ -664,10 +615,8 @@ const App = () => {
                 <div className="flex gap-3 mt-4">
                   <button
                     onClick={resetSettings}
-                    className={`py-2 px-4 rounded-md font-medium transition-all hover:opacity-90 ${
-                      darkMode
-                        ? 'bg-gray-700 hover:bg-gray-600 text-white'
-                        : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                    className={`py-2 px-4 rounded-md font-medium hover:opacity-90 ${
+                      darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
                     }`}
                   >
                     {t.reset}
@@ -675,7 +624,7 @@ const App = () => {
                   <button
                     onClick={resizeImage}
                     disabled={loading}
-                    className={`flex-1 py-2 px-4 rounded-md font-medium transition-all hover:opacity-90 ${
+                    className={`flex-1 py-2 px-4 rounded-md font-medium hover:opacity-90 ${
                       loading
                         ? 'opacity-70 cursor-not-allowed'
                         : darkMode
@@ -699,24 +648,20 @@ const App = () => {
                 <button
                   onClick={downloadImage}
                   className={`mt-6 w-full py-2 px-4 rounded-md font-medium transition-all hover:opacity-90 ${
-                    darkMode
-                      ? 'bg-green-600 hover:bg-green-700 text-white'
-                      : 'bg-green-500 hover:bg-green-600 text-white'
+                    darkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
                   }`}
                 >
                   {t.download}
                 </button>
               </>
             ) : (
-              <p className="text-center mt-10">{!image ? t.noImage : loading ? t.resizing : "Select size and click resize."}</p>
+              <p className="text-center mt-10">
+                {!image ? t.noImage : loading ? t.resizing : "Select size and click resize."}
+              </p>
             )}
           </div>
         </section>
       </main>
-
-      <footer className={`p-4 text-center mt-10 ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
-        <p>© 2025 M7D | {t.title} | Designed with ❤️ by M7D</p>
-      </footer>
     </div>
   );
 };
