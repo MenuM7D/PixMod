@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const App = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -10,10 +11,17 @@ const App = () => {
   const [aspectRatio, setAspectRatio] = useState(true);
   const [format, setFormat] = useState('png');
   const [quality, setQuality] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [loadingResize, setLoadingResize] = useState(false);
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+
+  // For Catbox Upload
+  const [mediaFile, setMediaFile] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState('');
+  const [uploadedLink, setUploadedLink] = useState('');
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [isDraggingMedia, setIsDraggingMedia] = useState(false);
 
   // Toggle dark mode
   const toggleDarkMode = () => {
@@ -25,13 +33,12 @@ const App = () => {
     setLanguage(language === 'en' ? 'ar' : 'en');
   };
 
-  // Handle image upload
+  // Handle image upload for resize
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       setFileName(file.name);
       setFileSize(file.size / 1024); // in KB
-
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new Image();
@@ -47,7 +54,7 @@ const App = () => {
     }
   };
 
-  // Drag & Drop handlers
+  // Drag & Drop handlers for resize section
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -83,7 +90,7 @@ const App = () => {
       canvas.width = width;
       canvas.height = height;
 
-      setLoading(true);
+      setLoadingResize(true);
 
       setTimeout(() => {
         ctx.drawImage(img, 0, 0, width, height);
@@ -94,7 +101,7 @@ const App = () => {
           resizedDataURL = canvas.toDataURL('image/png');
         }
         setResizedImage(resizedDataURL);
-        setLoading(false);
+        setLoadingResize(false);
       }, 600);
     };
   };
@@ -102,7 +109,6 @@ const App = () => {
   // Download image
   const downloadImage = () => {
     if (!resizedImage) return;
-
     const link = document.createElement('a');
     link.href = resizedImage;
     link.download = `resized-${Date.now()}.${format}`;
@@ -155,6 +161,14 @@ const App = () => {
       fileSize: 'File Size:',
       zoomIn: 'Zoom In',
       zoomOut: 'Zoom Out',
+      mediaTitle: 'Upload Media to Get Direct Link',
+      mediaUpload: 'Drag & Drop Media or Click to Upload',
+      uploadButton: 'Upload to Catbox',
+      uploadSuccess: 'Upload Successful!',
+      uploadFailed: 'Upload Failed!',
+      downloadLink: 'Copy Link',
+      noMedia: 'No media uploaded yet.',
+      mediaFile: 'Media File:',
     },
     ar: {
       title: 'مُصغّر الصور الاحترافي',
@@ -176,6 +190,14 @@ const App = () => {
       fileSize: 'حجم الملف:',
       zoomIn: 'تكبير',
       zoomOut: 'تصغير',
+      mediaTitle: 'رفع وسائط للحصول على رابط مباشر',
+      mediaUpload: 'اسحب وأفلت الملف أو انقر لرفعه',
+      uploadButton: 'ارفع إلى Catbox',
+      uploadSuccess: 'تم الرفع بنجاح!',
+      uploadFailed: 'فشل الرفع!',
+      downloadLink: 'نسخ الرابط',
+      noMedia: 'لم يتم رفع أي ملف بعد.',
+      mediaFile: 'الملف:',
     },
   };
 
@@ -242,18 +264,79 @@ const App = () => {
     }
   };
 
-  return (
-    <div className={`min-h-screen transition-colors duration-500 font-sans ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-[#f5f0ec] text-gray-800'}`}>
-      {/* Google Font */}
-      <link href="https://fonts.googleapis.com/css2?family=Inter :wght@400;500;600&display=swap" rel="stylesheet" />
+  // Catbox Upload Handlers
+  const handleMediaUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setMediaFile(file);
+      setUploadStatus('');
+      setUploadedLink('');
+    }
+  };
 
-      <header className={`p-4 md:p-6 flex justify-between items-center shadow-md backdrop-blur-lg border-b ${darkMode ? 'bg-black/70 border-gray-700' : 'bg-white/70 border-gray-200'}`}>
+  const handleMediaDragOver = (e) => {
+    e.preventDefault();
+    setIsDraggingMedia(true);
+  };
+
+  const handleMediaDragLeave = (e) => {
+    e.preventDefault();
+    setIsDraggingMedia(false);
+  };
+
+  const handleMediaDrop = (e) => {
+    e.preventDefault();
+    setIsDraggingMedia(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const input = document.getElementById('media-upload');
+      input.files = e.dataTransfer.files;
+      const event = new Event('change', { bubbles: true });
+      input.dispatchEvent(event);
+    }
+  };
+
+  const uploadToCatbox = async () => {
+    if (!mediaFile) return;
+    const formData = new FormData();
+    formData.append('reqtype', 'fileupload');
+    formData.append('userhash', ''); // يمكنك وضع userhash إذا كان لديك حساب
+    formData.append('fileToUpload', mediaFile);
+
+    setUploadLoading(true);
+    try {
+      const response = await axios.post('https://catbox.moe/user/api.php ', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      setUploadedLink(response.data);
+      setUploadStatus('success');
+    } catch (error) {
+      console.error('Upload failed:', error);
+      setUploadStatus('failed');
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(uploadedLink).then(() => {
+      alert(t.uploadSuccess);
+    });
+  };
+
+  return (
+    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
+      <header className="p-4 md:p-6 flex justify-between items-center shadow-md bg-opacity-80 backdrop-blur-md backdrop-saturate-150 border-b dark:border-gray-700">
         <h1 className="text-xl md:text-3xl font-bold">{t.title}</h1>
         <div className="flex gap-3 md:gap-4">
           {/* Language Switcher */}
           <button
             onClick={toggleLanguage}
-            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
+            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
+              darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+            }`}
             aria-label="Toggle language"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -266,7 +349,9 @@ const App = () => {
           {/* Dark Mode Toggle */}
           <button
             onClick={toggleDarkMode}
-            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
+            className={`p-2 rounded-full focus:outline-none transition-transform hover:scale-110 ${
+              darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+            }`}
             aria-label="Toggle dark mode"
           >
             {darkMode ? (
@@ -283,10 +368,11 @@ const App = () => {
         </div>
       </header>
 
-      <main className="container mx-auto p-4 md:p-6">
+      <main className="container mx-auto p-4 md:p-6 space-y-10">
+        {/* Resize Section */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {/* Upload Section */}
-          <div className={`p-6 rounded-lg shadow-md transition-all duration-300 transform hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-blue-500/20' : 'bg-white hover:shadow-blue-300/20'}`}>
             <h2 className="text-xl font-semibold mb-4">{t.upload}</h2>
             <label
               htmlFor="image-upload"
@@ -302,7 +388,7 @@ const App = () => {
               }`}
             >
               <div className="mb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="17 8 12 3 7 8"></polyline>
                   <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -313,7 +399,7 @@ const App = () => {
             </label>
 
             {image && (
-              <div className="mt-4 space-y-2 animate-fade-in">
+              <div className="mt-4 space-y-2">
                 <p><strong>{t.fileName}</strong> {fileName}</p>
                 <p><strong>{t.fileSize}</strong> {Math.round(fileSize)} KB</p>
               </div>
@@ -322,12 +408,14 @@ const App = () => {
             {!image && <p className="mt-4 text-center">{t.noImage}</p>}
 
             {image && (
-              <div className="mt-6 space-y-4 animate-fade-in">
+              <div className="mt-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <label>{t.lockRatio}</label>
                   <button
                     onClick={() => setAspectRatio(!aspectRatio)}
-                    className={`p-1 rounded focus:outline-none ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`}
+                    className={`p-1 rounded focus:outline-none ${
+                      darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                    }`}
                     aria-label="Toggle aspect ratio"
                   >
                     {aspectRatio ? (
@@ -450,14 +538,14 @@ const App = () => {
                   </button>
                   <button
                     onClick={resizeImage}
-                    disabled={loading}
+                    disabled={loadingResize}
                     className={`flex-1 py-2 px-4 rounded-md font-medium transition-all hover:opacity-90 ${
                       darkMode
                         ? 'bg-blue-600 hover:bg-blue-700 text-white'
                         : 'bg-blue-500 hover:bg-blue-600 text-white'
                     }`}
                   >
-                    {loading ? t.resizing : t.resize}
+                    {loadingResize ? t.resizing : t.resize}
                   </button>
                 </div>
               </div>
@@ -465,7 +553,7 @@ const App = () => {
           </div>
 
           {/* Preview & Download Section */}
-          <div className={`p-6 rounded-lg shadow-md transition-all duration-300 transform hover:shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-green-500/20' : 'bg-white hover:shadow-green-300/20'}`}>
             <h2 className="text-xl font-semibold mb-4">{t.download}</h2>
             {resizedImage ? (
               <>
@@ -482,15 +570,103 @@ const App = () => {
                 </button>
               </>
             ) : (
-              <p className="text-center mt-10">{!image ? t.noImage : loading ? t.resizing : "Select size and click resize."}</p>
+              <p className="text-center mt-10">{!image ? t.noImage : loadingResize ? t.resizing : "Select size and click resize."}</p>
+            )}
+          </div>
+        </section>
+
+        {/* New Media Upload Section */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+          <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-blue-500/20' : 'bg-white hover:shadow-blue-300/20'}`}>
+            <h2 className="text-xl font-semibold mb-4">{t.mediaTitle}</h2>
+            <label
+              htmlFor="media-upload"
+              onDragOver={handleMediaDragOver}
+              onDragLeave={handleMediaDragLeave}
+              onDrop={handleMediaDrop}
+              className={`relative block w-full p-6 border-2 border-dashed rounded-lg text-center cursor-pointer transition-all ${
+                isDraggingMedia
+                  ? 'border-blue-500 bg-blue-500/10'
+                  : darkMode 
+                    ? 'border-gray-600 hover:border-blue-400 bg-gray-700/50 hover:bg-gray-700' 
+                    : 'border-gray-300 hover:border-blue-400 bg-gray-50 hover:bg-gray-100'
+              }`}
+            >
+              <div className="mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <span className="block text-sm md:text-base">{t.mediaUpload}</span>
+              <input id="media-upload" type="file" accept="*" onChange={handleMediaUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+            </label>
+
+            {mediaFile && (
+              <div className="mt-4 space-y-2">
+                <p><strong>{t.mediaFile}</strong> {mediaFile.name}</p>
+                <p><strong>Size:</strong> {(mediaFile.size / 1024).toFixed(2)} KB</p>
+              </div>
+            )}
+
+            <button
+              onClick={uploadToCatbox}
+              disabled={!mediaFile || uploadLoading}
+              className={`mt-4 w-full py-2 px-4 rounded-md font-medium transition-all hover:opacity-90 ${
+                !mediaFile || uploadLoading
+                  ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                  : darkMode
+                    ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                    : 'bg-orange-500 hover:bg-orange-600 text-white'
+              }`}
+            >
+              {uploadLoading ? 'Uploading...' : t.uploadButton}
+            </button>
+
+            {uploadStatus === 'success' && (
+              <div className="mt-4 text-center">
+                <p className="text-green-500">{t.uploadSuccess}</p>
+                <button
+                  onClick={copyLink}
+                  className={`mt-2 py-1 px-3 rounded-md ${
+                    darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                  }`}
+                >
+                  {uploadedLink}
+                </button>
+              </div>
+            )}
+
+            {uploadStatus === 'failed' && (
+              <p className="mt-4 text-red-500 text-center">{t.uploadFailed}</p>
+            )}
+          </div>
+
+          {/* Uploaded Link Display */}
+          <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <h2 className="text-xl font-semibold mb-4">🔗 {t.downloadLink}</h2>
+            {uploadedLink ? (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={copyLink}
+                  className={`px-4 py-2 rounded-md ${
+                    darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  {t.downloadLink}
+                </button>
+                <p className="mt-4 break-words">{uploadedLink}</p>
+              </div>
+            ) : (
+              <p className="text-center mt-10">{t.noMedia}</p>
             )}
           </div>
         </section>
       </main>
 
-      {/* Updated Footer */}
-      <footer className={`p-4 text-center mt-10 ${darkMode ? 'bg-black text-gray-500' : 'bg-white text-gray-500'} border-t ${darkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-        <p>© 2025 M7D | Professional Image Resizer</p>
+      <footer className={`p-4 text-center mt-10 ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
+        <p>© 2025 M7D | {t.title}</p>
       </footer>
     </div>
   );
