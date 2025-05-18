@@ -4,9 +4,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged,
-  sendEmailVerification,
-  sendPasswordResetEmail
+  onAuthStateChanged
 } from 'firebase/auth';
 
 // ⚠️ استبدل هذه البيانات بمعلومات مشروعك من Firebase Console
@@ -23,16 +21,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// تسجيل مستخدم جديد + إرسال تحقق البريد الإلكتروني
+// تسجيل مستخدم جديد
 const registerUser = async (email, password) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-
-    // إرسال رابط التحقق
-    await sendEmailVerification(user);
-
-    return user;
+    return userCredential.user;
   } catch (error) {
     throw error;
   }
@@ -58,38 +51,10 @@ const logoutUser = async () => {
   }
 };
 
-// إعادة إرسال بريد التحقق
-const resendVerificationEmail = async () => {
-  const user = auth.currentUser;
-
-  if (user) {
-    try {
-      await sendEmailVerification(user);
-      return true;
-    } catch (error) {
-      throw error;
-    }
-  } else {
-    throw new Error('لا يوجد مستخدم مسجل');
-  }
-};
-
-// إعادة تعيين كلمة المرور
-const resetPassword = async (email) => {
-  try {
-    await sendPasswordResetEmail(auth, email);
-    return true;
-  } catch (error) {
-    throw error;
-  }
-};
-
 export {
   auth,
   registerUser,
   loginUser,
   logoutUser,
-  onAuthStateChanged,
-  resendVerificationEmail,
-  resetPassword
+  onAuthStateChanged
 };
