@@ -552,29 +552,20 @@ const App = () => {
 
               {image && (
                 <div className="mt-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label>{t.lockRatio}</label>
-                    <button
-                      onClick={() => setAspectRatio(!aspectRatio)}
-                      className={`p-1 rounded focus:outline-none ${
-                        darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-                      }`}
-                      aria-label="Toggle aspect ratio"
-                    >
-                      {aspectRatio ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                          <path d="M7 11V7a5 5 0 1 10 0v4" />
-                        </svg>
-                      ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                          <path d="M7 11V7a5 5 0 1 9.9-2" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-
+                <div className="flex items-center justify-between">
+  <label>{t.lockRatio}</label>
+  <button
+    onClick={() => setAspectRatio(!aspectRatio)}
+    className={`p-1 rounded focus:outline-none ${
+      darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+    }`}
+    aria-label="Toggle aspect ratio lock"
+  >
+    <span className="text-lg" role="img" aria-label={aspectRatio ? "Locked" : "Unlocked"}>
+      {aspectRatio ? '🔒' : '🔓'}
+    </span>
+  </button>
+</div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block mb-2">{t.width}</label>
