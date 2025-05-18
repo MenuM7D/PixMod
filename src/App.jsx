@@ -6,8 +6,7 @@ import {
   logoutUser,
   onAuthStateChanged,
   resendVerificationEmail,
-  resetPassword
-} from './firebase';
+  } from './firebase';
 
 const App = () => {
   // Auth states
