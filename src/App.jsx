@@ -5,7 +5,6 @@ import {
   loginUser,
   logoutUser,
   onAuthStateChanged,
-  resendVerificationEmail,
   } from './firebase';
 
 const App = () => {
