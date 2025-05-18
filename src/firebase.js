@@ -4,7 +4,9 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  sendEmailVerification,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 
 // 🔑 استبدل هذه البيانات بمعلومات مشروعك من Firebase Console
@@ -21,17 +23,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// تسجيل مستخدم جديد
+// ✅ تسجيل مستخدم جديد
 const registerUser = async (email, password) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    return userCredential.user;
+    const user = userCredential.user;
+    await sendEmailVerification(user);
+    return user;
   } catch (error) {
     throw error;
   }
 };
 
-// تسجيل دخول المستخدم
+// ✅ تسجيل دخول المستخدم
 const loginUser = async (email, password) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -41,11 +45,30 @@ const loginUser = async (email, password) => {
   }
 };
 
-// تسجيل خروج المستخدم
+// ✅ تسجيل خروج المستخدم
 const logoutUser = async () => {
   try {
     await signOut(auth);
     return true;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// ✅ إعادة إرسال رسالة التفعيل
+const resendVerificationEmail = () => {
+  const user = auth.currentUser;
+  if (user && !user.emailVerified) {
+    return sendEmailVerification(user);
+  }
+  throw new Error('لا يمكن إعادة الإرسال الآن');
+};
+
+// ✅ إعادة تعيين كلمة المرور
+const resetPassword = async (email) => {
+  try {
+    await sendPasswordResetEmail(auth, email);
+    return 'تم إرسال رابط إعادة تعيين كلمة المرور';
   } catch (error) {
     throw error;
   }
@@ -56,5 +79,9 @@ export {
   registerUser,
   loginUser,
   logoutUser,
-  onAuthStateChanged
+  onAuthStateChanged,
+  resendVerificationEmail,
+  resetPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail
 };
