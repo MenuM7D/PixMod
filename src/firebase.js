@@ -7,7 +7,7 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 
-// 🔑 معلومات مشروعك من Firebase
+// ⚠️ استبدل هذه البيانات بمعلومات مشروعك من Firebase Console
 const firebaseConfig = {
   apiKey: "AIzaSyCn3stWO7QelOmGPyqQ-1jVXy9Y0y5uPgA",
   authDomain: "image-resizer-m7d.firebaseapp.com",
@@ -21,7 +21,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// 📦 تسجيل مستخدم جديد
+// تسجيل مستخدم جديد
 const registerUser = async (email, password) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -31,7 +31,7 @@ const registerUser = async (email, password) => {
   }
 };
 
-// 🔐 تسجيل دخول المستخدم
+// تسجيل دخول المستخدم
 const loginUser = async (email, password) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -41,7 +41,7 @@ const loginUser = async (email, password) => {
   }
 };
 
-// 🚪 تسجيل الخروج
+// تسجيل خروج المستخدم
 const logoutUser = async () => {
   try {
     await signOut(auth);
