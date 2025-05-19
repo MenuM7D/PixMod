@@ -4,7 +4,7 @@
   "start_url": "https://pix-mod.vercel.app",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "theme_color": "#000000",
   "description": "Resize your images simply, easily, and smoothly — without complications",
   "lang": "en",
   "dir": "ltr",
@@ -12,8 +12,8 @@
   "scope": "/",
   "icons": [
     {
-      "src": "https://i.ibb.co/b5x2dJ4k/1000207411.png",
-      "sizes": "192x192",
+      "src": "https://i.ibb.co/B2HxFk70/1000207406.jpg",
+      "sizes": "1024x1024",
       "type": "image/png"
     },
     {
@@ -22,8 +22,8 @@
       "type": "image/png"
     },
     {
-      "src": "https://i.ibb.co/B2HxFk70/1000207406.jpg",
-      "sizes": "1024x1024",
+      "src": "https://i.ibb.co/b5x2dJ4k/1000207411.png",
+      "sizes": "192x192",
       "type": "image/png"
     }
   ],
