@@ -4,13 +4,13 @@
   "description": "Resize your images simply, easily, smoothly and without complications",
   "icons": [
     {
-      "src": "https://upcdn.io/W23MT3P/raw/uploads/2025/03/11/4jw6mAnbL6-1000051773%20(2).jpg", // أيقونة 192x192
+      "src": "https://i.ibb.co/PGrCGTSv/1000207398.png", // أيقونة 192x192
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "https://upcdn.io/W23MT3P/raw/uploads/2025/03/11/4jw6mcEK7S-1000051773%20(1).jpg", // أيقونة 512x512
+      "src": "https://i.ibb.co/JFC1bvjJ/1000207399.png", // أيقونة 512x512
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
@@ -29,7 +29,7 @@
       "url": "https://pix-mod.vercel.app",
       "icons": [
         {
-          "src": "https://upcdn.io/W23MT3P/raw/uploads/2025/03/11/4jw6nSAsGn-1000051773.jpg", // أيقونة الاختصار
+          "src": "https://i.ibb.co/mVnYpvx8/1000207400.png", // أيقونة الاختصار
           "sizes": "96x96",
           "type": "image/png"
         }
