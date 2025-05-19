@@ -1,51 +1,32 @@
 {
+  "name": "PixMod",
   "short_name": "PixMod",
-  "name": "PixMod - Image Resizer",
-  "description": "Resize your images simply, easily, smoothly and without complications",
+  "start_url": "https://pix-mod.vercel.app",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "description": "Resize your images simply, easily, and smoothly — without complications",
+  "lang": "en",
+  "dir": "ltr",
+  "orientation": "any",
+  "scope": "/",
   "icons": [
     {
-      "src": "https://i.ibb.co/mVnYpvx8/1000207400.png ",
-      "type": "image/png",
-      "sizes": "48x48",
-      "purpose": "any"
-    },
-    {
-      "src": "https://i.ibb.co/JFC1bvjJ/1000207399.png ",
-      "type": "image/png",
-      "sizes": "96x96",
-      "purpose": "any"
-    },
-    {
-      "src": "https://i.ibb.co/PGrCGTSv/1000207398.png ",
-      "type": "image/png",
+      "src": "https://placehold.co/192x192/e2e8f0/3b82f6?text=IR&font=noto&font_size=50 ",
       "sizes": "192x192",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "https://i.ibb.co/PGrCGTSv/1000207398.png ",
-      "type": "image/png",
+      "src": "https://placehold.co/512x512/e2e8f0/3b82f6?text=IR&font=noto&font_size=100 ",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "type": "image/png"
+    },
+    {
+      "src": "https://placehold.co/1024x1024/e2e8f0/3b82f6?text=IR&font=noto&font_size=200 ",
+      "sizes": "1024x1024",
+      "type": "image/png"
     }
   ],
-  "start_url": "https://pix-mod.vercel.app",
-  "background_color": "#FFFFFF",
-  "display": "standalone",
-  "scope": "/",
-  "theme_color": "#FFFFFF",
-  "orientation": "portrait",
-  "lang": "en-US",
-  "dir": "ltr",
-        }
-      ]
-    }
-  ],
-  "related_applications": [],
   "prefer_related_applications": false,
-  "gcm_sender_id": "103953800507",
-  "serviceworker": {
-    "src": "/service-worker.js",
-    "scope": "/",
-    "use_cache": true
-  }
+  "related_applications": []
 }
