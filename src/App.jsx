@@ -504,31 +504,7 @@ const App = () => {
         </div>
       </header>
       <main className="container mx-auto p-4 md:p-6">
-        {!isLoggedIn ? (
-          <section className="max-w-md mx-auto mt-10 p-6 rounded-lg shadow-lg bg-white dark:bg-gray-800 text-center space-y-4">
-            <h2 className="text-2xl font-semibold">مرحبًا بك!</h2>
-            <p>للاستفادة الكاملة من الموقع، يرجى تسجيل الدخول أو إنشاء حساب.</p>
-            <div className="flex gap-4">
-              <button
-                onClick={() => {
-                  setAuthMode('login');
-                  setShowAuthModal(true);
-                }}
-                className="flex-1 py-2 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {t.login}
-              </button>
-              <button
-                onClick={() => {
-                  setAuthMode('signup');
-                  setShowAuthModal(true);
-                }}
-                className="flex-1 py-2 px-4 rounded-md bg-green-600 hover:bg-green-700 text-white"
-              >
-                {t.signup}
-              </button>
-            </div>
-          </section>
+        
         ) : (
           <section className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             {/* Upload Section */}
@@ -549,6 +525,32 @@ const App = () => {
               >
                 <div className="mb-3">
                   <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
+  {!isLoggedIn && (
+  <section className={`max-w-md mx-auto mt-10 p-6 rounded-lg shadow-lg transition-colors duration-300 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} text-center space-y-4`}>
+    <h2 className="text-2xl font-semibold">مرحبًا بك!</h2>
+    <p>للاستفادة الكاملة من الموقع، يرجى تسجيل الدخول أو إنشاء حساب.</p>
+    <div className="flex gap-4">
+      <button
+        onClick={() => {
+          setAuthMode('login');
+          setShowAuthModal(true);
+        }}
+        className="flex-1 py-2 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white"
+      >
+        {t.login}
+      </button>
+      <button
+        onClick={() => {
+          setAuthMode('signup');
+          setShowAuthModal(true);
+        }}
+        className="flex-1 py-2 px-4 rounded-md bg-green-600 hover:bg-green-700 text-white"
+      >
+        {t.signup}
+      </button>
+    </div>
+  </section>
+)}
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="17 8 12 3 7 8"></polyline>
                     <line x1="12" y1="3" x2="12" y2="15"></line>
