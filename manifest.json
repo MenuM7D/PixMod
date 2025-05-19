@@ -1,6 +1,6 @@
 {
-  "short_name": "img resize",
-  "name": "img resize",
+  "short_name": "Pixize",
+  "name": "Pixize",
   "description": "Resize your images simply, easily, smoothly and without complications",
   "icons": [
     {
@@ -23,8 +23,8 @@
   "theme_color": "#000000",
   "shortcuts": [
     {
-      "name": "img resize",
-      "short_name": "img resize",
+      "name": "Pixize",
+      "short_name": "Pixize",
       "description": "Resize your images simply, easily, smoothly and without complications",
       "url": "https://media-downloader-rho.vercel.app",
       "icons": [
