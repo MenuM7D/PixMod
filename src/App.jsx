@@ -505,7 +505,7 @@ const App = () => {
       </header>
       <main className="container mx-auto p-4 md:p-6">
         {!isLoggedIn ? (
-          <section className="max-w-md mx-auto mt-10 p-6 rounded-lg shadow-lg bg-white dark:bg-gray-800 text-center space-y-4">
+          <section className={`max-w-md mx-auto mt-10 p-6 rounded-lg shadow-lg transition-colors duration-300 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} text-center space-y-4`}>
             <h2 className="text-2xl font-semibold">مرحبًا بك!</h2>
             <p>للاستفادة الكاملة من الموقع، يرجى تسجيل الدخول أو إنشاء حساب.</p>
             <div className="flex gap-4">
