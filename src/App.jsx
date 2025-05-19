@@ -478,7 +478,7 @@ const App = () => {
     darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
   }`}
 >
-  <FontAwesomeIcon icon={darkMode ? faMoon : faSun} color={darkMode ? '#fff' : '#000'} />
+  <FontAwesomeIcon icon={darkMode ? faSun : faMoon} color={darkMode ? '#fff' : '#000'} />
 </button>
           {/* Login Button */}
           {!isLoggedIn && (
