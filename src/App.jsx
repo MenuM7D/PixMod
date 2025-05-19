@@ -22,10 +22,8 @@ const App = () => {
   const [userName, setUserName] = useState('');
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState('');
-
+  
   // Image Resizer State
-  const [darkMode, setDarkMode] = useState(true); // dark mode افتراضيًا
-  const [language, setLanguage] = useState('ar'); // اللغة العربية افتراضيًا
   const [image, setImage] = useState(null);
   const [resizedImage, setResizedImage] = useState(null);
   const [width, setWidth] = useState(300);
@@ -37,6 +35,17 @@ const App = () => {
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Retrieve saved preferences from localStorage or use defaults
+  const [darkMode, setDarkMode] = useState(() => {
+    const savedDarkMode = localStorage.getItem('darkMode');
+    return savedDarkMode ? JSON.parse(savedDarkMode) : true;
+  });
+
+  const [language, setLanguage] = useState(() => {
+    const savedLang = localStorage.getItem('language');
+    return savedLang || 'ar'; // Default to Arabic
+  });
 
   // Translations
   const translations = {
@@ -138,6 +147,21 @@ const App = () => {
 
   const t = translations[language];
 
+  // Save darkMode to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  // Save language to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('language', language);
+  }, [language]);
+
   // Check if user is logged in
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -164,17 +188,14 @@ const App = () => {
       alert(t.requiredFields);
       return;
     }
-
     if (password !== confirmPassword) {
       alert(t.passNotMatch);
       return;
     }
-
     if (password.length < 6) {
       alert(t.invalidPass);
       return;
     }
-
     try {
       await registerUser(email, password);
       setShowAuthModal(false);
@@ -189,7 +210,6 @@ const App = () => {
       alert(t.requiredFields);
       return;
     }
-
     try {
       await loginUser(email, password);
       setShowAuthModal(false);
@@ -204,7 +224,6 @@ const App = () => {
       alert(t.requiredFields);
       return;
     }
-
     try {
       await resetPassword(email);
       alert(t.resetPasswordSuccess);
@@ -245,7 +264,6 @@ const App = () => {
     if (file) {
       setFileName(file.name);
       setFileSize(file.size / 1024); // KB
-
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new Image();
@@ -266,12 +284,10 @@ const App = () => {
     e.preventDefault();
     setIsDragging(true);
   };
-
   const handleDragLeave = (e) => {
     e.preventDefault();
     setIsDragging(false);
   };
-
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
@@ -287,18 +303,14 @@ const App = () => {
   // Resize image
   const resizeImage = () => {
     if (!image || width <= 0 || height <= 0) return;
-
     const img = new Image();
     img.src = image;
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-
       canvas.width = width;
       canvas.height = height;
-
       setLoading(true);
-
       setTimeout(() => {
         ctx.drawImage(img, 0, 0, width, height);
         let resizedDataURL;
@@ -316,7 +328,6 @@ const App = () => {
   // Download image
   const downloadImage = () => {
     if (!resizedImage) return;
-
     const link = document.createElement('a');
     link.href = resizedImage;
     link.download = `resized-${Date.now()}.${format}`;
@@ -347,19 +358,9 @@ const App = () => {
     }
   }, [height, aspectRatio, image]);
 
-  // Toggle dark mode
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
-
   // Reset settings
   const resetSettings = () => {
     if (!image) return;
-
     const img = new Image();
     img.src = image;
     img.onload = () => {
@@ -375,7 +376,6 @@ const App = () => {
   // Auto-size handler
   const setToOriginalSize = () => {
     if (!image) return;
-
     const img = new Image();
     img.src = image;
     img.onload = () => {
@@ -397,7 +397,6 @@ const App = () => {
       };
     }
   };
-
   const zoomOut = () => {
     if (!image) return;
     setWidth(prev => Math.max(prev - 50, 50));
@@ -455,7 +454,6 @@ const App = () => {
               </div>
             </div>
           )}
-
           {/* Language Switcher */}
           <button
             onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
@@ -470,19 +468,18 @@ const App = () => {
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
             </svg>
           </button>
-
           {/* Dark Mode Toggle */}
           <button
-  onClick={() => setDarkMode(!darkMode)}
-  aria-label="Toggle dark mode"
-  className={`p-2 rounded-full focus:outline-none hover:scale-105 transition-transform ${
-    darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-  }`}
->
-  <span className="text-lg" role="img" aria-label={darkMode ? "Moon" : "Sun"}>
-    {darkMode ? '🌙' : '☀️'}
-  </span>
-</button>
+            onClick={() => setDarkMode(!darkMode)}
+            aria-label="Toggle dark mode"
+            className={`p-2 rounded-full focus:outline-none hover:scale-105 transition-transform ${
+              darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+            }`}
+          >
+            <span className="text-lg" role="img" aria-label={darkMode ? "Moon" : "Sun"}>
+              {darkMode ? '🌙' : '☀️'}
+            </span>
+          </button>
           {/* Login Button */}
           {!isLoggedIn && (
             <button
@@ -495,7 +492,6 @@ const App = () => {
               {t.login}
             </button>
           )}
-
           {/* Logout Button */}
           {isLoggedIn && (
             <button
@@ -507,7 +503,6 @@ const App = () => {
           )}
         </div>
       </header>
-
       <main className="container mx-auto p-4 md:p-6">
         {!isLoggedIn ? (
           <section className="max-w-md mx-auto mt-10 p-6 rounded-lg shadow-lg bg-white dark:bg-gray-800 text-center space-y-4">
@@ -562,32 +557,29 @@ const App = () => {
                 <span className="block text-sm md:text-base">{t.dragDrop}</span>
                 <input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
               </label>
-
               {image && (
                 <div className="mt-4 space-y-2">
                   <p><strong>{t.fileName}</strong> {fileName}</p>
                   <p><strong>{t.fileSize}</strong> {Math.round(fileSize)} KB</p>
                 </div>
               )}
-
               {!image && <p className="mt-4 text-center">{t.noImage}</p>}
-
               {image && (
                 <div className="mt-6 space-y-4">
-                <div className="flex items-center justify-between">
-  <label>{t.lockRatio}</label>
-  <button
-    onClick={() => setAspectRatio(!aspectRatio)}
-    className={`p-1 rounded focus:outline-none ${
-      darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-    }`}
-    aria-label="Toggle aspect ratio lock"
-  >
-    <span className="text-lg" role="img" aria-label={aspectRatio ? "Locked" : "Unlocked"}>
-      {aspectRatio ? '🔒' : '🔓'}
-    </span>
-  </button>
-</div>
+                  <div className="flex items-center justify-between">
+                    <label>{t.lockRatio}</label>
+                    <button
+                      onClick={() => setAspectRatio(!aspectRatio)}
+                      className={`p-1 rounded focus:outline-none ${
+                        darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                      }`}
+                      aria-label="Toggle aspect ratio lock"
+                    >
+                      <span className="text-lg" role="img" aria-label={aspectRatio ? "Locked" : "Unlocked"}>
+                        {aspectRatio ? '🔒' : '🔓'}
+                      </span>
+                    </button>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block mb-2">{t.width}</label>
@@ -614,7 +606,6 @@ const App = () => {
                       />
                     </div>
                   </div>
-
                   <div className="flex gap-2">
                     <button
                       onClick={setToOriginalSize}
@@ -641,7 +632,6 @@ const App = () => {
                       {t.zoomOut}
                     </button>
                   </div>
-
                   <div>
                     <label className="block mb-2">{t.format}</label>
                     <select
@@ -655,7 +645,6 @@ const App = () => {
                       <option value="jpg">JPG</option>
                     </select>
                   </div>
-
                   {format === 'jpg' && (
                     <div>
                       <label className="block mb-2">{t.quality}</label>
@@ -674,7 +663,6 @@ const App = () => {
                       </div>
                     </div>
                   )}
-
                   <div className="flex gap-3 mt-4">
                     <button
                       onClick={resetSettings}
@@ -701,7 +689,6 @@ const App = () => {
                 </div>
               )}
             </div>
-
             {/* Preview & Download Section */}
             <div className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 hover:shadow-green-500/20' : 'bg-white hover:shadow-green-300/20'}`}>
               <h2 className="text-xl font-semibold mb-4">{t.download}</h2>
@@ -726,11 +713,9 @@ const App = () => {
           </section>
         )}
       </main>
-
       <footer className={`p-4 text-center mt-10 ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
         <p>© 2025 M7D | {t.title} | تم التصميم بحب ❤️</p>
       </footer>
-
       {/* Auth Modal */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -739,7 +724,6 @@ const App = () => {
             <h2 className="text-2xl font-bold mb-4 text-center">
               {authMode === 'login' ? t.login : authMode === 'signup' ? t.signup : t.forgotPassword}
             </h2>
-
             {authMode === 'login' && (
               <>
                 <input
@@ -781,7 +765,6 @@ const App = () => {
                 </p>
               </>
             )}
-
             {authMode === 'signup' && (
               <>
                 <input
@@ -822,7 +805,6 @@ const App = () => {
                 </p>
               </>
             )}
-
             {authMode === 'reset-password' && (
               <>
                 <p className="mb-4 text-sm">{t.resetPasswordDesc}</p>
@@ -849,7 +831,6 @@ const App = () => {
                 </p>
               </>
             )}
-
             <button
               onClick={() => setShowAuthModal(false)}
               className="absolute top-2 right-3 text-gray-400 hover:text-white"
