@@ -1,39 +1,75 @@
 {
   "short_name": "PixMod",
-  "name": "PixMod",
-  "description": "Resize your images simply, easily, smoothly and without complications",
+  "name": "PixMod - Image Resizer",
+  "description": "Resize your images simply, easily, smoothly and without complications.",
   "icons": [
     {
-      "src": "https://i.ibb.co/PGrCGTSv/1000207398.png", // أيقونة 192x192
+      "src": "https://i.ibb.co/mVnYpvx8/1000207400.png ",
+      "type": "image/png",
+      "sizes": "48x48",
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.ibb.co/JFC1bvjJ/1000207399.png ",
+      "type": "image/png",
+      "sizes": "96x96",
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.ibb.co/PGrCGTSv/1000207398.png ",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "https://i.ibb.co/JFC1bvjJ/1000207399.png", // أيقونة 512x512
+      "src": "https://i.ibb.co/PGrCGTSv/1000207398.png ",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
     }
   ],
-  "start_url": "/",
+  "start_url": "https://pix-mod.vercel.app",
   "background_color": "#FFFFFF",
   "display": "standalone",
   "scope": "/",
   "theme_color": "#FFFFFF",
+  "orientation": "portrait",
+  "lang": "en-US",
+  "dir": "ltr",
   "shortcuts": [
     {
-      "name": "PixMod",
-      "short_name": "PixMod",
-      "description": "Resize your images simply, easily, smoothly and without complications",
-      "url": "https://pix-mod.vercel.app",
+      "name": "Resize Images",
+      "short_name": "Resize",
+      "description": "Quick access to image resizing feature.",
+      "url": "/resize",
       "icons": [
         {
-          "src": "https://i.ibb.co/mVnYpvx8/1000207400.png", // أيقونة الاختصار
+          "src": "https://i.ibb.co/JFC1bvjJ/1000207399.png ",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Image Gallery",
+      "short_name": "Gallery",
+      "description": "Access your recently resized images",
+      "url": "/gallery",
+      "icons": [
+        {
+          "src": "https://i.ibb.co/mVnYpvx8/1000207400.png ",
           "sizes": "96x96",
           "type": "image/png"
         }
       ]
     }
-  ]
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "gcm_sender_id": "103953800507",
+  "serviceworker": {
+    "src": "/service-worker.js",
+    "scope": "/",
+    "use_cache": true
+  }
 }
