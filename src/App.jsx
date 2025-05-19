@@ -469,7 +469,7 @@ const App = () => {
             </svg>
           </button>
           {/* Dark Mode Toggle with Professional Icons */}
-<button
+           <button
   onClick={() => setDarkMode(!darkMode)}
   aria-label="Toggle dark mode"
   className={`p-2 rounded-full focus:outline-none hover:scale-105 transition-transform ${
