@@ -1,7 +1,7 @@
 {
   "short_name": "PixMod",
   "name": "PixMod - Image Resizer",
-  "description": "Resize your images simply, easily, smoothly and without complications.",
+  "description": "Resize your images simply, easily, smoothly and without complications",
   "icons": [
     {
       "src": "https://i.ibb.co/mVnYpvx8/1000207400.png ",
@@ -40,11 +40,11 @@
     {
       "name": "Resize Images",
       "short_name": "Resize",
-      "description": "Quick access to image resizing feature.",
+      "description": "Quick access to image resizing feature",
       "url": "/resize",
       "icons": [
         {
-          "src": "https://i.ibb.co/JFC1bvjJ/1000207399.png ",
+          "src": "https://i.ibb.co/JFC1bvjJ/1000207399.png",
           "sizes": "96x96",
           "type": "image/png"
         }
