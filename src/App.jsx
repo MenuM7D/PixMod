@@ -477,6 +477,20 @@ const App = () => {
   }`}
 >
   {darkMode ? (
+    // Dark Mode Icon (Stars)
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#fff' : '#000'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="1"></circle>
+      <circle cx="19" cy="21" r="1"></circle>
+      <circle cx="5" cy="21" r="1"></circle>
+      <circle cx="21" cy="8" r="1"></circle>
+      <circle cx="3" cy="9" r="1"></circle>
+      <circle cx="16.7" cy="17.7" r="1"></circle>
+      <circle cx="18.3" cy="14.3" r="1"></circle>
+      <circle cx="11" cy="17.7" r="1"></circle>
+      <circle cx="9.7" cy="14.3" r="1"></circle>
+    </svg>
+  ) : (
+    // Light Mode Icon (Sun)
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#fff' : '#000'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="5"></circle>
       <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -487,10 +501,6 @@ const App = () => {
       <line x1="21" y1="12" x2="23" y2="12"></line>
       <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
       <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-    </svg>
-  ) : (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#fff' : '#000'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7.958 7.958 0 0 1 21 12.79z"/>
     </svg>
   )}
 </button>
