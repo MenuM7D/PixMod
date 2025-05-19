@@ -10,6 +10,7 @@ import {
 } from './firebase';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
+import { faLock, faUnlock } from '@fortawesome/free-solid-svg-icons';
 
 const App = () => {
   // Auth states
@@ -567,19 +568,21 @@ const App = () => {
               {image && (
                 <div className="mt-6 space-y-4">
                   <div className="flex items-center justify-between">
-                    <label>{t.lockRatio}</label>
-                    <button
-                      onClick={() => setAspectRatio(!aspectRatio)}
-                      className={`p-1 rounded focus:outline-none ${
-                        darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-                      }`}
-                      aria-label="Toggle aspect ratio lock"
-                    >
-                      <span className="text-lg" role="img" aria-label={aspectRatio ? "Locked" : "Unlocked"}>
-                        {aspectRatio ? '🔒' : '🔓'}
-                      </span>
-                    </button>
-                  </div>
+  <label>{t.lockRatio}</label>
+  <button
+    onClick={() => setAspectRatio(!aspectRatio)}
+    className={`p-1 rounded focus:outline-none ${
+      darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+    }`}
+    aria-label="Toggle aspect ratio lock"
+  >
+    {aspectRatio ? (
+      <FontAwesomeIcon icon={faLock} color={darkMode ? '#fff' : '#000'} />
+    ) : (
+      <FontAwesomeIcon icon={faUnlock} color={darkMode ? '#fff' : '#000'} />
+    )}
+  </button>
+</div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block mb-2">{t.width}</label>
