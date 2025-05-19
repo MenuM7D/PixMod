@@ -466,7 +466,7 @@ const App = () => {
     darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
   }`}
 >
-  <FontAwesomeIcon icon={faLanguage} color={darkMode ? '#fff' : '#000'} />
+  <FontAwesomeIcon icon={faGlobe} color={darkMode ? '#fff' : '#000'} />
 </button>
           {/* Dark Mode Toggle with FontAwesome Icons */}
 <button
