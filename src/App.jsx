@@ -11,6 +11,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
 import { faLock, faUnlock } from '@fortawesome/free-solid-svg-icons';
+import { faLanguage, faGlobe } from '@fortawesome/free-solid-svg-icons';
 
 const App = () => {
   // Auth states
@@ -457,20 +458,16 @@ const App = () => {
               </div>
             </div>
           )}
-          {/* Language Switcher */}
-          <button
-            onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-            aria-label="Toggle language"
-            className={`p-2 rounded-full focus:outline-none hover:scale-105 transition-transform ${
-              darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="2" y1="12" x2="22" y2="12" />
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
-          </button>
+          {/* Language Switcher with FontAwesome Icon */}
+<button
+  onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+  aria-label="Toggle language"
+  className={`p-2 rounded-full focus:outline-none hover:scale-105 transition-transform ${
+    darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+  }`}
+>
+  <FontAwesomeIcon icon={faLanguage} color={darkMode ? '#fff' : '#000'} />
+</button>
           {/* Dark Mode Toggle with FontAwesome Icons */}
 <button
   onClick={() => setDarkMode(!darkMode)}
