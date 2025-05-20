@@ -728,8 +728,15 @@ useEffect(() => {
                 </>
               ) : (
                 <p className="text-center mt-10">
-                  {!image ? t.noImage : loading ? t.resizing : "حدد الحجم واضغط تغيير"}
-                </p>
+  {!image 
+    ? t.noImage 
+    : loading 
+      ? t.resizing 
+      : language === 'ar' 
+        ? 'حدد الحجم واضغط تغيير' 
+        : 'Select size and click Resize'
+  }
+</p>
               )}
             </div>
           </section>
