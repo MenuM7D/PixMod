@@ -60,7 +60,7 @@ const App = () => {
       height: 'الارتفاع',
       resize: 'تغيير الحجم',
       download: 'تنزيل الصورة المصغرة',
-      noImage: 'لم يتم تحميل أي صورة بعد.',
+      noImage: 'لم يتم تحميل أي صورة بعد',
       resizing: 'جاري التغيير...',
       dragDrop: 'اسحب وأفلت أو اضغط لتحميل صورة',
       lockRatio: 'قفل نسبة الأبعاد',
@@ -97,8 +97,8 @@ const App = () => {
       nameSaved: 'تم حفظ الاسم بنجاح!',
       userInitial: 'مستخدم',
       resetPassword: 'إعادة تعيين كلمة المرور',
-      resetPasswordDesc: 'أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور.',
-      resetPasswordSuccess: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.'
+      resetPasswordDesc: 'أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور',
+      resetPasswordSuccess: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني'
     },
     en: {
       title: 'Professional Image Resizer',
@@ -505,7 +505,7 @@ const App = () => {
         {!isLoggedIn ? (
           <section className={`max-w-md mx-auto mt-10 p-6 rounded-lg shadow-lg transition-colors duration-300 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} text-center space-y-4`}>
             <h2 className="text-2xl font-semibold">مرحبًا بك!</h2>
-            <p>للاستفادة الكاملة من الموقع، يرجى تسجيل الدخول أو إنشاء حساب.</p>
+            <p>للاستفادة الكاملة من الموقع، يرجى تسجيل الدخول أو إنشاء حساب</p>
             <div className="flex gap-4">
               <button
                 onClick={() => {
