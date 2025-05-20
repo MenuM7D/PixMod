@@ -1,17 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import {
-  auth,
-  registerUser,
-  loginUser,
-  logoutUser,
-  onAuthStateChanged,
-  resendVerificationEmail,
-  resetPassword
-} from './firebase';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
-import { faLock, faUnlock } from '@fortawesome/free-solid-svg-icons';
-import { faLanguage, faGlobe } from '@fortawesome/free-solid-svg-icons';
 
 const App = () => {
   // Auth states
@@ -39,18 +26,18 @@ const App = () => {
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-
+  
   // Retrieve saved preferences from localStorage or use defaults
   const [darkMode, setDarkMode] = useState(() => {
     const savedDarkMode = localStorage.getItem('darkMode');
     return savedDarkMode ? JSON.parse(savedDarkMode) : true;
   });
-
+  
   const [language, setLanguage] = useState(() => {
     const savedLang = localStorage.getItem('language');
     return savedLang || 'ar'; // Default to Arabic
   });
-
+  
   // Translations
   const translations = {
     ar: {
@@ -152,9 +139,9 @@ const App = () => {
       welcomeDescription: "Please log in or create an account to get the most out of the site"
     }
   };
-
+  
   const t = translations[language];
-
+  
   // Save darkMode to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
@@ -164,32 +151,23 @@ const App = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
-
+  
   // Save language to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('language', language);
   }, [language]);
-
+  
   // Check if user is logged in
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setIsLoggedIn(true);
-        setCurrentUser(user);
-        setUserName(user.email || 'User');
-        setNewName(user.email.split('@')[0]);
-        setIsVerified(user.emailVerified);
-      } else {
-        setIsLoggedIn(false);
-        setCurrentUser(null);
-        setUserName('');
-        setNewName('');
-        setIsVerified(false);
-      }
-    });
-    return () => unsubscribe();
+    // Mock auth check - replace with real authentication in production
+    const timer = setTimeout(() => {
+      setIsLoggedIn(true); // For demo purposes, auto-login the user
+      setUserName('John Doe');
+    }, 500);
+    
+    return () => clearTimeout(timer);
   }, []);
-
+  
   // Handle Sign Up
   const handleSignUp = async () => {
     if (!email || !password || !confirmPassword) {
@@ -204,57 +182,51 @@ const App = () => {
       alert(t.invalidPass);
       return;
     }
-    try {
-      await registerUser(email, password);
+    
+    // In a real app, this would call an API to register a user
+    setTimeout(() => {
+      alert('Registration successful!');
       setShowAuthModal(false);
-    } catch (error) {
-      alert(error.message);
-    }
+    }, 500);
   };
-
+  
   // Handle Login
   const handleLogin = async () => {
     if (!email || !password) {
       alert(t.requiredFields);
       return;
     }
-    try {
-      await loginUser(email, password);
+    
+    // In a real app, this would call an API to authenticate the user
+    setTimeout(() => {
+      alert('Login successful!');
       setShowAuthModal(false);
-    } catch (error) {
-      alert(error.message);
-    }
+    }, 500);
   };
-
+  
   // Handle Reset Password
   const handleResetPassword = async () => {
     if (!email) {
       alert(t.requiredFields);
       return;
     }
-    try {
-      await resetPassword(email);
+    
+    // In a real app, this would call an API to send a password reset link
+    setTimeout(() => {
       alert(t.resetPasswordSuccess);
       setAuthMode('login');
-    } catch (error) {
-      alert(error.message);
-    }
+    }, 500);
   };
-
+  
   // Handle Logout
   const handleLogout = async () => {
-    try {
-      await logoutUser();
+    // In a real app, this would clear the authentication token
+    setTimeout(() => {
+      alert('Logged out successfully!');
       setIsLoggedIn(false);
-      setCurrentUser(null);
-      setUserName('');
-      setNewName('');
-      setEditingName(false);
-    } catch (error) {
-      alert(error.message);
-    }
+    }, 500);
   };
-
+  
   // Save new name
   const handleSaveName = () => {
     if (!newName.trim()) {
@@ -265,13 +237,14 @@ const App = () => {
     setEditingName(false);
     alert(t.nameSaved);
   };
-
+  
   // Handle image upload
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       setFileName(file.name);
       setFileSize(file.size / 1024); // KB
+      
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new Image();
@@ -286,16 +259,18 @@ const App = () => {
       reader.readAsDataURL(file);
     }
   };
-
+  
   // Drag & Drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
   };
+  
   const handleDragLeave = (e) => {
     e.preventDefault();
     setIsDragging(false);
   };
+  
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
@@ -307,113 +282,140 @@ const App = () => {
       input.dispatchEvent(event);
     }
   };
-
+  
   // Resize image
   const resizeImage = () => {
     if (!image || width <= 0 || height <= 0) return;
+    
     const img = new Image();
+    img.crossOrigin = "anonymous"; // Handle cross-origin images
     img.src = image;
+    
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
+      
       canvas.width = width;
       canvas.height = height;
       setLoading(true);
-      setTimeout(() => {
-        ctx.drawImage(img, 0, 0, width, height);
-        let resizedDataURL;
-        if (format === 'jpg') {
-          resizedDataURL = canvas.toDataURL('image/jpeg', quality);
-        } else {
-          resizedDataURL = canvas.toDataURL('image/png');
+      
+      // Use requestAnimationFrame for better performance
+      requestAnimationFrame(() => {
+        try {
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          let resizedDataURL;
+          if (format === 'jpg') {
+            resizedDataURL = canvas.toDataURL('image/jpeg', quality);
+          } else {
+            resizedDataURL = canvas.toDataURL('image/png');
+          }
+          
+          setResizedImage(resizedDataURL);
+          setLoading(false);
+        } catch (error) {
+          console.error('Error resizing image:', error);
+          alert('حدث خطأ أثناء تغيير حجم الصورة');
+          setLoading(false);
         }
-        setResizedImage(resizedDataURL);
-        setLoading(false);
-      }, 600);
+      });
+    };
+    
+    img.onerror = () => {
+      alert('فشل في تحميل الصورة');
+      setLoading(false);
     };
   };
-
+  
   // Download image
   const downloadImage = () => {
     if (!resizedImage) return;
+    
     const link = document.createElement('a');
     link.href = resizedImage;
     link.download = `resized-${Date.now()}.${format}`;
     link.click();
   };
-
+  
   // Update height based on aspect ratio
   useEffect(() => {
     if (aspectRatio && image) {
       const img = new Image();
       img.src = image;
       img.onload = () => {
-        const ratio = img.height / img.width;
+        const ratio = img.naturalHeight / img.naturalWidth;
         setHeight(Math.round(width * ratio));
       };
     }
   }, [width, aspectRatio, image]);
-
+  
   // Update width based on aspect ratio
   useEffect(() => {
     if (aspectRatio && image) {
       const img = new Image();
       img.src = image;
       img.onload = () => {
-        const ratio = img.width / img.height;
+        const ratio = img.naturalWidth / img.naturalHeight;
         setWidth(Math.round(height * ratio));
       };
     }
   }, [height, aspectRatio, image]);
-
+  
   // Reset settings
   const resetSettings = () => {
     if (!image) return;
+    
     const img = new Image();
     img.src = image;
     img.onload = () => {
-      setWidth(img.width);
-      setHeight(img.height);
+      setWidth(img.naturalWidth);
+      setHeight(img.naturalHeight);
       setAspectRatio(true);
       setFormat('png');
       setQuality(1);
       setResizedImage(null);
     };
   };
-
+  
   // Auto-size handler
   const setToOriginalSize = () => {
     if (!image) return;
+    
     const img = new Image();
     img.src = image;
     img.onload = () => {
-      setWidth(img.width);
-      setHeight(img.height);
+      setWidth(img.naturalWidth);
+      setHeight(img.naturalHeight);
     };
   };
-
+  
   // Zoom handlers
   const zoomIn = () => {
     if (!image) return;
+    
     setWidth(prev => Math.min(prev + 50, 5000));
+    
     if (aspectRatio) {
       const img = new Image();
       img.src = image;
       img.onload = () => {
-        const ratio = img.height / img.width;
-        setHeight(Math.round(width * ratio));
+        const ratio = img.naturalHeight / img.naturalWidth;
+        setHeight(Math.round((prevWidth + 50) * ratio));
       };
     }
   };
+  
   const zoomOut = () => {
     if (!image) return;
+    
     setWidth(prev => Math.max(prev - 50, 50));
+    
     if (aspectRatio) {
       const img = new Image();
       img.src = image;
       img.onload = () => {
-        const ratio = img.height / img.width;
-        setHeight(Math.round(width * ratio));
+        const ratio = img.naturalHeight / img.naturalWidth;
+        setHeight(Math.round((prevWidth - 50) * ratio));
       };
     }
   };
@@ -462,26 +464,46 @@ const App = () => {
               </div>
             </div>
           )}
-          {/* Language Switcher with FontAwesome Icon */}
-<button
-  onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-  aria-label="Toggle language"
-  className={`p-2 rounded-full focus:outline-none hover:scale-105 transition-transform ${
-    darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-  }`}
->
-  <FontAwesomeIcon icon={faGlobe} color={darkMode ? '#fff' : '#000'} />
-</button>
-          {/* Dark Mode Toggle with FontAwesome Icons */}
-<button
-  onClick={() => setDarkMode(!darkMode)}
-  aria-label="Toggle dark mode"
-  className={`p-2 rounded-full focus:outline-none hover:scale-105 transition-transform ${
-    darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-  }`}
->
-  <FontAwesomeIcon icon={darkMode ? faSun : faMoon} color={darkMode ? '#fff' : '#000'} />
-</button>
+          {/* Language Switcher */}
+          <button
+            onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+            aria-label="Toggle language"
+            className={`p-2 rounded-full focus:outline-none hover:scale-105 transition-transform ${
+              darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+          </button>
+          {/* Dark Mode Toggle */}
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            aria-label="Toggle dark mode"
+            className={`p-2 rounded-full focus:outline-none hover:scale-105 transition-transform ${
+              darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+            }`}
+          >
+            {darkMode ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            )}
+          </button>
           {/* Login Button */}
           {!isLoggedIn && (
             <button
@@ -509,7 +531,7 @@ const App = () => {
         {!isLoggedIn ? (
           <section className={`max-w-md mx-auto mt-10 p-6 rounded-lg shadow-lg transition-colors duration-300 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} text-center space-y-4`}>
             <h2 className="text-2xl font-semibold">{t.welcomeTitle}</h2>
-<p>{t.welcomeDescription}</p>
+            <p>{t.welcomeDescription}</p>
             <div className="flex gap-4">
               <button
                 onClick={() => {
@@ -569,21 +591,27 @@ const App = () => {
               {image && (
                 <div className="mt-6 space-y-4">
                   <div className="flex items-center justify-between">
-  <label>{t.lockRatio}</label>
-  <button
-    onClick={() => setAspectRatio(!aspectRatio)}
-    className={`p-1 rounded focus:outline-none ${
-      darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-    }`}
-    aria-label="Toggle aspect ratio lock"
-  >
-    {aspectRatio ? (
-      <FontAwesomeIcon icon={faLock} color={darkMode ? '#fff' : '#000'} />
-    ) : (
-      <FontAwesomeIcon icon={faUnlock} color={darkMode ? '#fff' : '#000'} />
-    )}
-  </button>
-</div>
+                    <label>{t.lockRatio}</label>
+                    <button
+                      onClick={() => setAspectRatio(!aspectRatio)}
+                      className={`p-1 rounded focus:outline-none ${
+                        darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                      }`}
+                      aria-label="Toggle aspect ratio lock"
+                    >
+                      {aspectRatio ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                          <path d="M7 11V7a5 5 0 0 1 9.9-2"></path>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block mb-2">{t.width}</label>
