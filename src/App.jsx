@@ -98,7 +98,9 @@ const App = () => {
       userInitial: 'مستخدم',
       resetPassword: 'إعادة تعيين كلمة المرور',
       resetPasswordDesc: 'أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور',
-      resetPasswordSuccess: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني'
+      resetPasswordSuccess: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
+      welcomeTitle: "مرحبًا بك!",
+      welcomeDescription: "للاستفادة الكاملة من الموقع، يرجى تسجيل الدخول أو إنشاء حساب"
     },
     en: {
       title: 'Professional Image Resizer',
@@ -145,7 +147,9 @@ const App = () => {
       userInitial: 'User',
       resetPassword: 'Reset Password',
       resetPasswordDesc: 'Enter your email and we will send you a link to reset your password.',
-      resetPasswordSuccess: 'Password reset link has been sent to your email.'
+      resetPasswordSuccess: 'Password reset link has been sent to your email.',
+      welcomeTitle: "Welcome!",
+      welcomeDescription: "Please log in or create an account to get the most out of the site."
     }
   };
 
@@ -504,8 +508,8 @@ const App = () => {
       <main className="container mx-auto p-4 md:p-6">
         {!isLoggedIn ? (
           <section className={`max-w-md mx-auto mt-10 p-6 rounded-lg shadow-lg transition-colors duration-300 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} text-center space-y-4`}>
-            <h2 className="text-2xl font-semibold">مرحبًا بك!</h2>
-            <p>للاستفادة الكاملة من الموقع، يرجى تسجيل الدخول أو إنشاء حساب</p>
+            <h2 className="text-2xl font-semibold">{t.welcomeTitle}</h2>
+<p>{t.welcomeDescription}</p>
             <div className="flex gap-4">
               <button
                 onClick={() => {
