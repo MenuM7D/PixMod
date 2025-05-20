@@ -362,11 +362,15 @@ useEffect(() => {
   }
 }, [width, aspectRatio]);
 
-// Update width based on aspect ratio
+// Update width based on aspect ratio when height changes
 useEffect(() => {
   if (aspectRatio && image && height > 0) {
-    const ratio = width / height;
-    setWidth(Math.round(height * ratio));
+    const img = new Image();
+    img.src = image;
+    img.onload = () => {
+      const ratio = img.width / img.height; // Original ratio (width/height)
+      setWidth(Math.round(height * ratio));
+    };
   }
 }, [height, aspectRatio]);
 
@@ -577,18 +581,24 @@ useEffect(() => {
   <button
   onClick={() => {
     if (!aspectRatio) {
-      // When locking the ratio, base it on current dimensions
-      const ratio = height / width;
-      setHeight(Math.round(width * ratio));
+      // عند إعادة قفل النسبة، نستخدم الأبعاد الحالية
+      const img = new Image();
+      img.src = image;
+      img.onload = () => {
+        const ratio = img.width / img.height;
+        setHeight(Math.round(width / ratio)); // تحديث الارتفاع حسب العرض الحالي
+      };
     }
     setAspectRatio(!aspectRatio);
   }}
-  className={`...`}
+  className={`p-1 rounded focus:outline-none ${
+    darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+  }`}
 >
   {aspectRatio ? (
-    <FontAwesomeIcon icon={faLock} />
+    <FontAwesomeIcon icon={faLock} color={darkMode ? '#fff' : '#000'} />
   ) : (
-    <FontAwesomeIcon icon={faUnlock} />
+    <FontAwesomeIcon icon={faUnlock} color={darkMode ? '#fff' : '#000'} />
   )}
 </button>
 </div>
