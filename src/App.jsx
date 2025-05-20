@@ -354,17 +354,21 @@ const App = () => {
     }
   }, [width, aspectRatio, image]);
 
-  // Update width based on aspect ratio
-  useEffect(() => {
-    if (aspectRatio && image) {
-      const img = new Image();
-      img.src = image;
-      img.onload = () => {
-        const ratio = img.width / img.height;
-        setWidth(Math.round(height * ratio));
-      };
-    }
-  }, [height, aspectRatio, image]);
+  // Update height based on aspect ratio
+useEffect(() => {
+  if (aspectRatio && image && width > 0) {
+    const ratio = height / width;
+    setHeight(Math.round(width * ratio));
+  }
+}, [width, aspectRatio]);
+
+// Update width based on aspect ratio
+useEffect(() => {
+  if (aspectRatio && image && height > 0) {
+    const ratio = width / height;
+    setWidth(Math.round(height * ratio));
+  }
+}, [height, aspectRatio]);
 
   // Reset settings
   const resetSettings = () => {
@@ -571,18 +575,22 @@ const App = () => {
                   <div className="flex items-center justify-between">
   <label>{t.lockRatio}</label>
   <button
-    onClick={() => setAspectRatio(!aspectRatio)}
-    className={`p-1 rounded focus:outline-none ${
-      darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-    }`}
-    aria-label="Toggle aspect ratio lock"
-  >
-    {aspectRatio ? (
-      <FontAwesomeIcon icon={faLock} color={darkMode ? '#fff' : '#000'} />
-    ) : (
-      <FontAwesomeIcon icon={faUnlock} color={darkMode ? '#fff' : '#000'} />
-    )}
-  </button>
+  onClick={() => {
+    if (!aspectRatio) {
+      // When locking the ratio, base it on current dimensions
+      const ratio = height / width;
+      setHeight(Math.round(width * ratio));
+    }
+    setAspectRatio(!aspectRatio);
+  }}
+  className={`...`}
+>
+  {aspectRatio ? (
+    <FontAwesomeIcon icon={faLock} />
+  ) : (
+    <FontAwesomeIcon icon={faUnlock} />
+  )}
+</button>
 </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
