@@ -100,7 +100,7 @@ const App = () => {
       resetPasswordDesc: 'أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور',
       resetPasswordSuccess: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
       welcomeTitle: "مرحبًا بك",
-      welcomeDescription: "للاستفادة الكاملة من الموقع، يرجى تسجيل الدخول أو إنشاء حساب"
+      welcomeDescription: "للاستفادة الكاملة من الموقع يرجى تسجيل الدخول أو إنشاء حساب"
     },
     en: {
       title: 'Professional Image Resizer',
