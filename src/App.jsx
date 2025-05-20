@@ -94,12 +94,12 @@ const App = () => {
       changeName: 'تعديل الاسم',
       save: 'حفظ',
       cancel: 'إلغاء',
-      nameSaved: 'تم حفظ الاسم بنجاح!',
+      nameSaved: 'تم حفظ الاسم بنجاح',
       userInitial: 'مستخدم',
       resetPassword: 'إعادة تعيين كلمة المرور',
       resetPasswordDesc: 'أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور',
       resetPasswordSuccess: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
-      welcomeTitle: "مرحبًا بك!",
+      welcomeTitle: "مرحبًا بك",
       welcomeDescription: "للاستفادة الكاملة من الموقع، يرجى تسجيل الدخول أو إنشاء حساب"
     },
     en: {
@@ -109,7 +109,7 @@ const App = () => {
       height: 'Height',
       resize: 'Resize Image',
       download: 'Download Resized Image',
-      noImage: 'No image uploaded yet.',
+      noImage: 'No image uploaded yet',
       resizing: 'Resizing...',
       dragDrop: 'Drag & Drop or Click to Upload',
       lockRatio: 'Lock Aspect Ratio',
@@ -143,13 +143,13 @@ const App = () => {
       changeName: 'Edit Name',
       save: 'Save',
       cancel: 'Cancel',
-      nameSaved: 'Name saved successfully!',
+      nameSaved: 'Name saved successfully',
       userInitial: 'User',
       resetPassword: 'Reset Password',
-      resetPasswordDesc: 'Enter your email and we will send you a link to reset your password.',
-      resetPasswordSuccess: 'Password reset link has been sent to your email.',
-      welcomeTitle: "Welcome!",
-      welcomeDescription: "Please log in or create an account to get the most out of the site."
+      resetPasswordDesc: 'Enter your email and we will send you a link to reset your password',
+      resetPasswordSuccess: 'Password reset link has been sent to your email',
+      welcomeTitle: "Welcome",
+      welcomeDescription: "Please log in or create an account to get the most out of the site"
     }
   };
 
