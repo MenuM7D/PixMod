@@ -668,23 +668,23 @@ useEffect(() => {
                     </select>
                   </div>
                   {format === 'jpg' && (
-                    <div>
-                      <label className="block mb-2">{t.quality}</label>
-                      <input
-                        type="range"
-                        min="0.1"
-                        max="1"
-                        step="0.1"
-                        value={quality}
-                        onChange={(e) => setQuality(parseFloat(e.target.value))}
-                        className="w-full"
-                      />
-                      <div className="flex justify-between mt-1 text-xs">
-                        <span>منخفض</span>
-                        <span>عالي</span>
-                      </div>
-                    </div>
-                  )}
+  <div>
+    <label className="block mb-2">{t.quality}</label>
+    <input
+      type="range"
+      min="0.1"
+      max="1"
+      step="0.1"
+      value={quality}
+      onChange={(e) => setQuality(parseFloat(e.target.value))}
+      className="w-full"
+    />
+    <div className="flex justify-between mt-1 text-xs">
+      <span>{language === 'ar' ? 'منخفض' : 'Low'}</span>
+      <span>{language === 'ar' ? 'عالي' : 'High'}</span>
+    </div>
+  </div>
+)}
                   <div className="flex gap-3 mt-4">
                     <button
                       onClick={resetSettings}
